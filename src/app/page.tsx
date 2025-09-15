@@ -281,10 +281,13 @@ export default function Home() {
           </div>
           
           <div className="flex items-center gap-3">
+            {/* AI 활성화 표시 - 주석 처리 */}
+            {/*
             <div className="flex items-center gap-1 bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
               <Sparkles className="w-3 h-3" />
               AI 활성화
             </div>
+            */}
             <button 
               className="px-3 py-1 border rounded text-sm"
               onClick={() => setIsPreview(!isPreview)}
@@ -556,7 +559,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 기능 소개 섹션 */}
+      {/* 기능 소개 섹션 - AI 관련 내용 수정 */}
       <div className="bg-white border-t border-gray-200 mt-12">
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="text-center mb-8">
@@ -569,12 +572,13 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* AI 자동완성 섹션 주석 처리 및 다른 기능으로 대체 */}
             <div className="bg-gray-50 rounded-lg p-6">
-              <Sparkles className="w-8 h-8 text-blue-600 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">AI 자동완성</h3>
+              <PenTool className="w-8 h-8 text-blue-600 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">고급 에디터</h3>
               <p className="text-gray-600 text-sm">
-                <kbd className="px-1 py-0.5 bg-gray-200 rounded text-xs">/</kbd> 키를 눌러 GPT-4가 자동으로 글을 이어서 작성해드립니다.
-                생산성이 3배 향상됩니다.
+                TipTap 기반의 강력한 WYSIWYG 에디터로 자유롭게 콘텐츠를 
+                작성하고 편집할 수 있습니다.
               </p>
             </div>
 

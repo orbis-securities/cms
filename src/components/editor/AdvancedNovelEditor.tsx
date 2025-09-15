@@ -50,7 +50,8 @@ import {
   Settings
 } from 'lucide-react';
 
-// AI 자동완성 확장
+// AI 자동완성 확장 - 주석 처리
+/*
 const AIAutoComplete = Extension.create({
   name: 'aiAutoComplete',
 
@@ -120,6 +121,7 @@ const triggerAICompletion = async (context: string, view: any) => {
     toast.error('AI 자동완성을 사용할 수 없습니다.', { id: 'ai-completion' });
   }
 };
+*/
 
 // 코드 하이라이팅 언어 설정
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -156,7 +158,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
   const [content, setContent] = useState(initialContent);
   const [isSaving, setIsSaving] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
-  const [showAICompletion, setShowAICompletion] = useState(false);
+  // const [showAICompletion, setShowAICompletion] = useState(false); // AI 관련 state 주석 처리
 
   // 이미지 업로드 핸들러
   const handleImageUpload = useCallback(async (file: File): Promise<string> => {
@@ -183,7 +185,8 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
     }
   }, [blogId]);
 
-  // AI 자동완성 핸들러
+  // AI 자동완성 핸들러 - 주석 처리
+  /*
   const handleAICompletion = useCallback(async (prompt: string) => {
     setShowAICompletion(true);
     try {
@@ -209,6 +212,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       setShowAICompletion(false);
     }
   }, []);
+  */
 
   // TipTap Editor 설정 - 안정적인 기본 구성
   const editor = useEditor({
@@ -236,7 +240,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
           if (node.type.name === 'heading') {
             return `제목을 입력하세요...`;
           }
-          return 'AI와 함께 글을 작성해보세요. \'/\'를 눌러 시작하세요...';
+          return '글을 작성해보세요...'; // AI 관련 텍스트 제거
         },
       }),
       Typography,
@@ -262,7 +266,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       CodeBlockLowlight.configure({
         lowlight,
       }),
-      AIAutoComplete,
+      // AIAutoComplete, // AI 확장 주석 처리
     ],
     content: initialContent || '<p></p>',
     editorProps: {
@@ -338,7 +342,8 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
     return () => clearTimeout(timer);
   }, [content, onSave, editor]);
 
-  // 슬래시 커맨드 처리
+  // 슬래시 커맨드 처리 - 주석 처리
+  /*
   useEffect(() => {
     if (!editor) return;
 
@@ -361,7 +366,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [editor, handleAICompletion]);
-
+  */
 
   // Ref 노출
   useImperativeHandle(ref, () => ({
@@ -400,13 +405,15 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
             </div>
           )}
 
-          {/* AI 상태 */}
+          {/* AI 상태 - 주석 처리 */}
+          {/*
           {showAICompletion && (
             <div className="flex items-center gap-2">
               <Sparkles className="w-3 h-3 animate-pulse text-purple-600" />
               <span className="text-sm text-purple-600">AI 작성 중...</span>
             </div>
           )}
+          */}
         </div>
 
         {/* 단어 수 */}
@@ -551,14 +558,9 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
         />
       </div>
 
-
-      {/* 하단 툴팁 */}
+      {/* 하단 툴팁 - AI 관련 제거 */}
       <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
         <div className="flex items-center gap-4 text-sm text-gray-700">
-          <div className="flex items-center gap-1">
-            <kbd className="px-2 py-1 bg-white rounded shadow text-xs">/</kbd>
-            <span>AI 자동완성</span>
-          </div>
           <div className="flex items-center gap-1">
             <span>드래그 앤 드롭</span>
             <ImageIcon className="w-4 h-4" />

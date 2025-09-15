@@ -95,7 +95,7 @@ export default function SimpleNovelEditor({
             }, 10);
           }}
           dangerouslySetInnerHTML={{ 
-            __html: content || '<p>AI와 함께 글을 작성해보세요...</p>' 
+            __html: content || '<p>글을 작성해보세요...</p>' // AI 관련 텍스트 제거
           }}
         />
       </div>
@@ -142,7 +142,8 @@ export default function SimpleNovelEditor({
         </div>
       </div>
 
-      {/* AI 자동완성 안내 */}
+      {/* AI 자동완성 안내 - 주석 처리 */}
+      {/*
       <div className="mt-4 p-4 bg-blue-50 rounded-lg mx-6">
         <div className="flex items-center gap-2 text-blue-800">
           <span className="text-lg">🤖</span>
@@ -152,6 +153,7 @@ export default function SimpleNovelEditor({
           </div>
         </div>
       </div>
+      */}
     </div>
   );
 }
