@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+/* Highlight.js 스타일 */
+@import 'highlight.js/styles/github.css';
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Prose 스타일 커스터마이징 */
+.prose {
+  @apply text-gray-800 leading-relaxed;
+}
+
+.prose h1 {
+  @apply text-3xl font-bold text-gray-900 mb-4;
+}
+
+.prose h2 {
+  @apply text-2xl font-semibold text-gray-900 mb-3;
+}
+
+.prose h3 {
+  @apply text-xl font-semibold text-gray-900 mb-2;
+}
+
+.prose p {
+  @apply mb-4;
+}
+
+.prose ul, .prose ol {
+  @apply mb-4 pl-6;
+}
+
+.prose ul li {
+  @apply list-disc mb-1;
+}
+
+.prose ol li {
+  @apply list-decimal mb-1;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-4;
+}
+
+.prose code {
+  @apply bg-gray-100 px-1 py-0.5 rounded text-sm font-mono;
+}
+
+.prose pre {
+  @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-4;
+}
+
+.prose img {
+  @apply rounded-lg shadow-sm;
+}
+
+.prose a {
+  @apply text-blue-600 hover:text-blue-800 underline;
+}
+
+.prose table {
+  @apply w-full border-collapse border border-gray-300 mb-4;
+}
+
+.prose th,
+.prose td {
+  @apply border border-gray-300 px-4 py-2;
+}
+
+.prose th {
+  @apply bg-gray-50 font-semibold;
+}
+
+/* TipTap 에디터 특정 스타일 */
+.ProseMirror {
+  outline: none !important;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+
+/* 드래그 커서 스타일 */
+.ProseMirror-dropcursor {
+  @apply border-l-2 border-blue-500;
+}
+
+/* 선택된 이미지 스타일 */
+.ProseMirror img.ProseMirror-selectednode {
+  @apply ring-2 ring-blue-500 ring-offset-2;
+}
+
+/* 테이블 선택 스타일 */
+.ProseMirror .selectedCell {
+  @apply bg-blue-100;
+}
+
+/* YouTube 임베드 스타일 */
+.ProseMirror iframe {
+  @apply rounded-lg shadow-sm;
+}
+
+/* 링크 스타일 */
+.ProseMirror a {
+  @apply text-blue-600 hover:text-blue-800 underline cursor-pointer;
+}
+
+/* 하이라이트 스타일 */
+.ProseMirror mark {
+  @apply bg-yellow-200 px-1 rounded;
+}

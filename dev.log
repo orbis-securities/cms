@@ -1,0 +1,67 @@
+
+> cms@0.1.0 dev
+> next dev --turbopack
+
+   ▲ Next.js 15.5.2 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://10.255.255.254:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 8.3s
+ ○ Compiling / ...
+ ✓ Compiled / in 7.2s
+ GET / 200 in 8652ms
+ ✓ Compiled /favicon.ico in 407ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 943ms
+ GET / 200 in 449ms
+ GET / 200 in 434ms
+ GET / 200 in 360ms
+ GET / 200 in 456ms
+ ○ Compiling /_not-found/page ...
+ ✓ Compiled /_not-found/page in 710ms
+ GET /textures/main_nav/Collapse_Hover.png 404 in 284ms
+ ⨯ The requested resource isn't a valid image for /textures/main_nav/Collapse_Hover.png received null
+ GET /textures/main_nav/Collapse.png 404 in 815ms
+ ⨯ The requested resource isn't a valid image for /textures/main_nav/Collapse.png received null
+ GET / 200 in 334ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 431ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/mnt/c/cms/.next/static/development/_buildManifest.js.tmp.78ohue1tsl7'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/mnt/c/cms/.next/static/development/_buildManifest.js.tmp.78ohue1tsl7'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 2.6s
+ ⨯ [Error: ENOENT: no such file or directory, open '/mnt/c/cms/.next/static/development/_buildManifest.js.tmp.xcccs3l7hjs'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/mnt/c/cms/.next/static/development/_buildManifest.js.tmp.xcccs3l7hjs'
+}
+[Error: ENOENT: no such file or directory, open '/mnt/c/cms/.next/static/development/_buildManifest.js.tmp.78ohue1tsl7'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/mnt/c/cms/.next/static/development/_buildManifest.js.tmp.78ohue1tsl7'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/mnt/c/cms/.next/static/development/_buildManifest.js.tmp.bj8b4f1m1e'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/mnt/c/cms/.next/static/development/_buildManifest.js.tmp.bj8b4f1m1e'
+}
+[Error: ENOENT: no such file or directory, open '/mnt/c/cms/.next/static/development/_buildManifest.js.tmp.h7mdbaac8mc'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/mnt/c/cms/.next/static/development/_buildManifest.js.tmp.h7mdbaac8mc'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/mnt/c/cms/.next/static/development/_buildManifest.js.tmp.c89y2y0hb6g'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/mnt/c/cms/.next/static/development/_buildManifest.js.tmp.c89y2y0hb6g'
+}
+ GET / 200 in 707ms
