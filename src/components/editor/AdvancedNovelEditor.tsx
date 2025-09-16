@@ -157,6 +157,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
 }: AdvancedNovelEditorProps, ref) => {
   const [content, setContent] = useState(initialContent);
   const [isSaving, setIsSaving] = useState(false);
+  const [showColorPalette, setShowColorPalette] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
   // const [showAICompletion, setShowAICompletion] = useState(false); // AI 관련 state 주석 처리
 
@@ -329,6 +330,15 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
     },
   });
 
+  // initialContent 변경 시 에디터 내용 업데이트
+  useEffect(() => {
+    if (initialContent && initialContent !== content && editor) {
+      console.log('🔄 에디터 내용 업데이트:', initialContent.substring(0, 50) + '...');
+      setContent(initialContent);
+      editor.commands.setContent(initialContent);
+    }
+  }, [initialContent, editor]);
+
   // 자동 저장
   useEffect(() => {
     if (!content || !onSave || !editor) return;
@@ -484,14 +494,171 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
             <List className="w-4 h-4" />
           </button>
           <div className="w-px h-6 bg-gray-300 mx-1" />
-          <button
-            onClick={() => editor?.chain().focus().toggleHighlight().run()}
-            className={`p-2 rounded hover:bg-gray-100 ${
-              editor?.isActive('highlight') ? 'bg-yellow-100 text-yellow-600' : ''
-            }`}
-          >
-            <Palette className="w-4 h-4" />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowColorPalette(!showColorPalette)}
+              className={`p-2 rounded hover:bg-gray-100 ${
+                editor?.isActive('textStyle') ? 'bg-purple-100 text-purple-600' : ''
+              }`}
+            >
+              <Palette className="w-4 h-4" />
+            </button>
+
+            {/* 구글 스타일 색상 팔레트 */}
+            {showColorPalette && (
+              <div className="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg p-3 z-20">
+                <div className="flex gap-0.5">
+                  {/* 각 색상별 세로 그라데이션 */}
+
+                  {/* 회색 계열 */}
+                  <div className="flex flex-col gap-0.5">
+                    {['#000000', '#434343', '#666666', '#999999', '#cccccc', '#efefef'].map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => {
+                          editor?.chain().focus().setColor(color).run();
+                          setShowColorPalette(false);
+                        }}
+                        className="w-6 h-6 border border-gray-300 hover:scale-110 transition-transform"
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+
+                  {/* 빨간색 계열 */}
+                  <div className="flex flex-col gap-0.5">
+                    {['#5b0f00', '#a61c00', '#cc0000', '#e06666', '#ea9999', '#f4cccc'].map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => {
+                          editor?.chain().focus().setColor(color).run();
+                          setShowColorPalette(false);
+                        }}
+                        className="w-6 h-6 border border-gray-300 hover:scale-110 transition-transform"
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+
+                  {/* 주황색 계열 */}
+                  <div className="flex flex-col gap-0.5">
+                    {['#783f04', '#b45f06', '#e69138', '#f6b26b', '#f9cb9c', '#fce5cd'].map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => {
+                          editor?.chain().focus().setColor(color).run();
+                          setShowColorPalette(false);
+                        }}
+                        className="w-6 h-6 border border-gray-300 hover:scale-110 transition-transform"
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+
+                  {/* 노란색 계열 */}
+                  <div className="flex flex-col gap-0.5">
+                    {['#7f6000', '#bf9000', '#f1c232', '#ffd966', '#ffe599', '#fff2cc'].map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => {
+                          editor?.chain().focus().setColor(color).run();
+                          setShowColorPalette(false);
+                        }}
+                        className="w-6 h-6 border border-gray-300 hover:scale-110 transition-transform"
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+
+                  {/* 초록색 계열 */}
+                  <div className="flex flex-col gap-0.5">
+                    {['#274e13', '#38761d', '#6aa84f', '#93c47d', '#b6d7a8', '#d9ead3'].map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => {
+                          editor?.chain().focus().setColor(color).run();
+                          setShowColorPalette(false);
+                        }}
+                        className="w-6 h-6 border border-gray-300 hover:scale-110 transition-transform"
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+
+                  {/* 파란색 계열 */}
+                  <div className="flex flex-col gap-0.5">
+                    {['#1c4587', '#1155cc', '#3c78d8', '#6d9eeb', '#9fc5e8', '#cfe2f3'].map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => {
+                          editor?.chain().focus().setColor(color).run();
+                          setShowColorPalette(false);
+                        }}
+                        className="w-6 h-6 border border-gray-300 hover:scale-110 transition-transform"
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+
+                  {/* 보라색 계열 */}
+                  <div className="flex flex-col gap-0.5">
+                    {['#20124d', '#351c75', '#674ea7', '#8e7cc3', '#b4a7d6', '#d9d2e9'].map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => {
+                          editor?.chain().focus().setColor(color).run();
+                          setShowColorPalette(false);
+                        }}
+                        className="w-6 h-6 border border-gray-300 hover:scale-110 transition-transform"
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+
+                  {/* 핑크색 계열 */}
+                  <div className="flex flex-col gap-0.5">
+                    {['#4c1130', '#741b47', '#a64d79', '#c27ba0', '#d5a6bd', '#ead1dc'].map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => {
+                          editor?.chain().focus().setColor(color).run();
+                          setShowColorPalette(false);
+                        }}
+                        className="w-6 h-6 border border-gray-300 hover:scale-110 transition-transform"
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-1 mt-3 pt-2 border-t">
+                  <button
+                    onClick={() => {
+                      editor?.chain().focus().unsetColor().run();
+                      setShowColorPalette(false);
+                    }}
+                    className="flex-1 px-2 py-1 text-xs border rounded hover:bg-gray-50"
+                  >
+                    기본색
+                  </button>
+                  <button
+                    onClick={() => setShowColorPalette(false)}
+                    className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
           <button
             onClick={() => {
               const url = window.prompt('링크 URL을 입력하세요:');

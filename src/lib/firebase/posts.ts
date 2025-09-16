@@ -1,5 +1,5 @@
 import { db } from './config';
-import { collection, addDoc, updateDoc, doc, getDoc, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, getDoc, getDocs, query, where, orderBy, Timestamp, setDoc, startAfter, limit, deleteDoc, collectionGroup } from 'firebase/firestore';
 import { Post, PostStatus } from '@/types/index';
 
 // Firestore 연결 상태 확인 함수
@@ -8,7 +8,7 @@ function isFirestoreAvailable(): boolean {
 }
 
 /**
- * Firestore에 포스트 저장
+ * Firestore에 포스트 저장 (서브컬렉션 방식)
  */
 export async function savePostToFirestore(
   title: string,
@@ -31,7 +31,11 @@ export async function savePostToFirestore(
     }
 
     console.log('📝 Firestore 포스트 저장 시작:', title);
-    
+
+    // 타임스탬프 기반 문서 ID 생성
+    const timestamp = Timestamp.now();
+    const docId = timestamp.toMillis().toString();
+
     const postData: Omit<Post, 'id'> = {
       title: title.trim(),
       content: content.trim(),
@@ -40,9 +44,9 @@ export async function savePostToFirestore(
       categories: [metadata.category],
       tags: metadata.tags,
       status: metadata.status,
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-      publishedAt: metadata.status === 'published' ? Timestamp.now() : null,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      publishedAt: metadata.status === 'published' ? timestamp : null,
       scheduledAt: null,
       slug: generateSlug(title),
       authorId: 'admin', // 추후 사용자 시스템과 연동
@@ -57,10 +61,13 @@ export async function savePostToFirestore(
       }
     };
 
-    const docRef = await addDoc(collection(db, 'posts'), postData);
-    console.log('✅ Firestore 포스트 저장 완료:', docRef.id);
-    
-    return docRef.id;
+    // Collection Group 구조로 저장: blogs/{blogId}/posts/{timestamp}
+    const postRef = doc(db, 'blogs', blogId, 'posts', docId);
+    await setDoc(postRef, postData);
+
+    console.log('✅ Firestore 포스트 저장 완료:', docId);
+
+    return docId;
   } catch (error) {
     console.error('❌ Firestore 포스트 저장 실패:', error);
     throw error;
@@ -68,14 +75,15 @@ export async function savePostToFirestore(
 }
 
 /**
- * 포스트 업데이트
+ * 포스트 업데이트 (서브컬렉션 방식)
  */
 export async function updatePostInFirestore(
+  blogId: string,
   postId: string,
   updates: Partial<Post>
 ): Promise<void> {
   try {
-    const postRef = doc(db, 'posts', postId);
+    const postRef = doc(db, 'blogs', blogId, 'posts', postId);
     await updateDoc(postRef, {
       ...updates,
       updatedAt: Timestamp.now(),
@@ -88,28 +96,48 @@ export async function updatePostInFirestore(
 }
 
 /**
- * 특정 블로그의 포스트 목록 가져오기
+ * 특정 블로그의 전체 포스트 목록 가져오기 (모든 카테고리 순회)
  */
-export async function getPostsByBlog(blogId: string): Promise<Post[]> {
+export async function getPostsByBlog(
+  blogId: string,
+  pageSize: number = 10,
+  lastPostId?: string
+): Promise<{ posts: Post[], hasMore: boolean }> {
   try {
-    const q = query(
-      collection(db, 'posts'),
+    let q = query(
+      collectionGroup(db, 'posts'),
       where('blogId', '==', blogId),
-      where('status', '==', 'published'),
-      orderBy('publishedAt', 'desc')
+      limit(pageSize + 1)
     );
-    
+
+    if (lastPostId) {
+      const lastDoc = await getDoc(doc(db, 'blogs', blogId, 'posts', lastPostId));
+      if (lastDoc.exists()) {
+        q = query(
+          collectionGroup(db, 'posts'),
+          where('blogId', '==', blogId),
+          startAfter(lastDoc),
+          limit(pageSize + 1)
+        );
+      }
+    }
+
     const querySnapshot = await getDocs(q);
     const posts: Post[] = [];
-    
+
     querySnapshot.forEach((doc) => {
       posts.push({
         id: doc.id,
         ...doc.data()
       } as Post);
     });
-    
-    return posts;
+
+    const hasMore = posts.length > pageSize;
+    if (hasMore) {
+      posts.pop();
+    }
+
+    return { posts, hasMore };
   } catch (error) {
     console.error('❌ Firestore 포스트 목록 조회 실패:', error);
     throw error;
@@ -117,20 +145,63 @@ export async function getPostsByBlog(blogId: string): Promise<Post[]> {
 }
 
 /**
- * 포스트 상세 조회
+ * 전체 블로그 포스트 가져오기 (페이징 없음, 모든 카테고리)
  */
-export async function getPostById(postId: string): Promise<Post | null> {
+export async function getAllPostsByBlog(blogId: string): Promise<Post[]> {
   try {
-    const docRef = doc(db, 'posts', postId);
+    // 먼저 블로그의 카테고리 목록을 가져옴
+    const settings = await getBlogSettings(blogId);
+    if (!settings || !settings.categories.length) {
+      return [];
+    }
+
+    const allPosts: Post[] = [];
+
+    // 각 카테고리별로 포스트 조회
+    for (const category of settings.categories) {
+      try {
+        const categoryResult = await getPostsByCategory(blogId, category, 1000); // 카테고리당 최대 1000개
+        allPosts.push(...categoryResult.posts);
+      } catch (error) {
+        console.warn(`카테고리 ${category} 조회 실패:`, error);
+        // 특정 카테고리 실패해도 계속 진행
+      }
+    }
+
+    // 시간순으로 정렬
+    allPosts.sort((a, b) => {
+      const aTime = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const bTime = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return bTime - aTime;
+    });
+
+    return allPosts;
+  } catch (error) {
+    console.error('❌ Firestore 포스트 목록 조회 실패:', error);
+    throw error;
+  }
+}
+
+/**
+ * 포스트 상세 조회 (카테고리별 구조)
+ */
+export async function getPostById(blogId: string, postId: string): Promise<Post | null> {
+  try {
+    console.log('🔍 포스트 조회 시작:', { blogId, postId });
+    const docRef = doc(db, 'blogs', blogId, 'posts', postId);
     const docSnap = await getDoc(docRef);
-    
+
+    console.log('📋 포스트 존재:', docSnap.exists());
+
     if (docSnap.exists()) {
-      return {
+      const postData = {
         id: docSnap.id,
         ...docSnap.data()
       } as Post;
+      console.log('📊 로드된 포스트:', postData);
+      return postData;
     }
-    
+
     return null;
   } catch (error) {
     console.error('❌ Firestore 포스트 조회 실패:', error);
@@ -139,19 +210,18 @@ export async function getPostById(postId: string): Promise<Post | null> {
 }
 
 /**
- * 슬러그로 포스트 조회
+ * 슬러그로 포스트 조회 (서브컬렉션 방식)
  */
 export async function getPostBySlug(blogId: string, slug: string): Promise<Post | null> {
   try {
     const q = query(
-      collection(db, 'posts'),
-      where('blogId', '==', blogId),
+      collection(db, blogId),
       where('slug', '==', slug),
       where('status', '==', 'published')
     );
-    
+
     const querySnapshot = await getDocs(q);
-    
+
     if (!querySnapshot.empty) {
       const doc = querySnapshot.docs[0];
       return {
@@ -159,12 +229,331 @@ export async function getPostBySlug(blogId: string, slug: string): Promise<Post 
         ...doc.data()
       } as Post;
     }
-    
+
     return null;
   } catch (error) {
     console.error('❌ Firestore 포스트 슬러그 조회 실패:', error);
     throw error;
   }
+}
+
+/**
+ * 카테고리별 포스트 가져오기 (직접 접근 방식)
+ */
+export async function getPostsByCategory(
+  blogId: string,
+  category: string,
+  pageSize: number = 10,
+  lastPostId?: string
+): Promise<{ posts: Post[], hasMore: boolean }> {
+  try {
+    let q = query(
+      collectionGroup(db, 'posts'),
+      where('blogId', '==', blogId),
+      where('categories', 'array-contains', category),
+      limit(pageSize + 1)
+    );
+
+    if (lastPostId) {
+      const lastDoc = await getDoc(doc(db, 'blogs', blogId, 'posts', lastPostId));
+      if (lastDoc.exists()) {
+        q = query(
+          collectionGroup(db, 'posts'),
+          where('blogId', '==', blogId),
+          where('categories', 'array-contains', category),
+          startAfter(lastDoc),
+          limit(pageSize + 1)
+        );
+      }
+    }
+
+    const querySnapshot = await getDocs(q);
+    const posts: Post[] = [];
+
+    querySnapshot.forEach((doc) => {
+      posts.push({
+        id: doc.id,
+        ...doc.data()
+      } as Post);
+    });
+
+    const hasMore = posts.length > pageSize;
+    if (hasMore) {
+      posts.pop();
+    }
+
+    return { posts, hasMore };
+  } catch (error) {
+    console.error('❌ 카테고리별 포스트 조회 실패:', error);
+    throw error;
+  }
+}
+
+/**
+ * 태그별 포스트 가져오기 (모든 카테고리에서 검색)
+ */
+export async function getPostsByTag(
+  blogId: string,
+  tag: string,
+  pageSize: number = 10,
+  lastPostId?: string
+): Promise<{ posts: Post[], hasMore: boolean }> {
+  try {
+    // 먼저 블로그의 카테고리 목록을 가져옴
+    const settings = await getBlogSettings(blogId);
+    if (!settings || !settings.categories.length) {
+      return { posts: [], hasMore: false };
+    }
+
+    const allPosts: Post[] = [];
+
+    // 각 카테고리별로 태그가 포함된 포스트 조회
+    for (const category of settings.categories) {
+      try {
+        const postsRef = collection(db, blogId, 'posts', category);
+        const q = query(
+          postsRef,
+          where('status', '==', 'published'),
+          where('tags', 'array-contains', tag)
+        );
+
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+          allPosts.push({
+            id: doc.id,
+            ...doc.data()
+          } as Post);
+        });
+      } catch (error) {
+        console.warn(`카테고리 ${category}에서 태그 검색 실패:`, error);
+        // 특정 카테고리 실패해도 계속 진행
+      }
+    }
+
+    // 시간순으로 정렬
+    allPosts.sort((a, b) => {
+      const aTime = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const bTime = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return bTime - aTime;
+    });
+
+    // 페이징 처리
+    const startIndex = lastPostId ?
+      allPosts.findIndex(post => post.id === lastPostId) + 1 : 0;
+
+    const endIndex = startIndex + pageSize;
+    const paginatedPosts = allPosts.slice(startIndex, endIndex);
+    const hasMore = endIndex < allPosts.length;
+
+    return { posts: paginatedPosts, hasMore };
+  } catch (error) {
+    console.error('❌ 태그별 포스트 조회 실패:', error);
+    throw error;
+  }
+}
+
+/**
+ * 블로그 설정 가져오기 (카테고리, 태그 등)
+ */
+export async function getBlogSettings(blogId: string): Promise<{
+  categories: string[];
+} | null> {
+  try {
+    console.log('🔍 getBlogSettings 호출:', { blogId, type: typeof blogId });
+
+    if (!blogId || typeof blogId !== 'string') {
+      console.error('❌ 잘못된 blogId:', blogId);
+      return null;
+    }
+
+    const settingsRef = doc(db, 'blogs', blogId, 'data', 'settings');
+    const settingsSnap = await getDoc(settingsRef);
+
+    if (settingsSnap.exists()) {
+      const data = settingsSnap.data();
+      console.log('📋 Settings 데이터:', data);
+      const categories = Array.isArray(data.categories) ? data.categories : [];
+      console.log('📝 카테고리 배열:', categories);
+      return {
+        categories
+      };
+    }
+
+    // 기본 설정 반환
+    const defaultSettings = getDefaultBlogSettings(blogId);
+    console.log('🔧 기본 설정 사용:', defaultSettings);
+    return defaultSettings;
+  } catch (error) {
+    console.error('❌ 블로그 설정 조회 실패:', error);
+    return getDefaultBlogSettings(blogId);
+  }
+}
+
+/**
+ * 블로그 설정 저장/업데이트
+ */
+export async function saveBlogSettings(
+  blogId: string,
+  settings: {
+    categories: string[];
+  }
+): Promise<void> {
+  try {
+    // 1. 부모 문서에 필드 추가 (빈 문서 방지)
+    const blogRef = doc(db, 'blogs', blogId);
+    await setDoc(blogRef, {
+      active: true,
+      createdAt: Timestamp.now()
+    }, { merge: true });
+
+    // 2. 설정 문서 저장
+    const settingsRef = doc(db, 'blogs', blogId, 'data', 'settings');
+    await setDoc(settingsRef, settings, { merge: true });
+
+    console.log('✅ 블로그 설정 저장 완료:', blogId);
+  } catch (error) {
+    console.error('❌ 블로그 설정 저장 실패:', error);
+    throw error;
+  }
+}
+
+/**
+ * 기본 블로그 설정
+ */
+function getDefaultBlogSettings(blogId: string): {
+  categories: string[];
+} {
+  switch (blogId) {
+    case 'axi':
+      return {
+        categories: ['시장 분석', '거래 전략', '경제 뉴스', '테크니컬 분석', '투자 팁']
+      };
+    case 'orbisLanding':
+      return {
+        categories: ['회사 소식', '제품 업데이트', '고객 사례', '기술 블로그', '이벤트']
+      };
+    default:
+      return {
+        categories: ['일반', '공지사항']
+      };
+  }
+}
+
+/**
+ * 포스트 삭제
+ */
+export async function deletePostFromFirestore(
+  blogId: string,
+  category: string,
+  postId: string
+): Promise<void> {
+  try {
+    const postRef = doc(db, blogId, 'posts', category, postId);
+    await deleteDoc(postRef);
+    console.log('✅ Firestore 포스트 삭제 완료:', postId);
+  } catch (error) {
+    console.error('❌ Firestore 포스트 삭제 실패:', error);
+    throw error;
+  }
+}
+
+/**
+ * 포스트 카테고리 변경 (기존 글 삭제 후 새 카테고리에 저장)
+ */
+export async function changePostCategory(
+  blogId: string,
+  oldCategory: string,
+  newCategory: string,
+  postId: string
+): Promise<void> {
+  try {
+    // 1. 기존 포스트 데이터 가져오기
+    const oldPostRef = doc(db, blogId, 'posts', oldCategory, postId);
+    const oldPostSnap = await getDoc(oldPostRef);
+
+    if (!oldPostSnap.exists()) {
+      throw new Error('포스트를 찾을 수 없습니다.');
+    }
+
+    const postData = oldPostSnap.data();
+
+    // 2. 새 카테고리에 포스트 저장 (카테고리 필드도 업데이트)
+    const newPostRef = doc(db, blogId, 'posts', newCategory, postId);
+    await setDoc(newPostRef, {
+      ...postData,
+      categories: [newCategory], // 카테고리 업데이트
+      updatedAt: Timestamp.now()
+    });
+
+    // 3. 기존 포스트 삭제
+    await deleteDoc(oldPostRef);
+
+    console.log('✅ 포스트 카테고리 변경 완료:', postId, oldCategory, '→', newCategory);
+  } catch (error) {
+    console.error('❌ 포스트 카테고리 변경 실패:', error);
+    throw error;
+  }
+}
+
+/**
+ * 모든 블로그 목록 가져오기 (Firebase에서 동적 감지)
+ */
+export async function getAllBlogs(): Promise<{ blogId: string, displayName: string }[]> {
+  try {
+    console.log('🔍 blogs 컬렉션 조회 시작');
+
+    // blogs 컬렉션에서 모든 블로그 조회
+    console.log('🔗 Firebase 연결 상태:', db ? 'OK' : 'FAIL');
+    const blogsSnapshot = await getDocs(collection(db, 'blogs'));
+    console.log('📊 blogs 컬렉션 문서 수:', blogsSnapshot.size);
+    console.log('📁 발견된 문서 ID들:', blogsSnapshot.docs.map(doc => doc.id));
+
+    // 직접 axi 문서 접근 테스트
+    try {
+      const axiDoc = await getDoc(doc(db, 'blogs', 'axi'));
+      console.log('🧪 axi 문서 직접 접근:', axiDoc.exists());
+    } catch (error) {
+      console.error('❌ axi 문서 직접 접근 실패:', error);
+    }
+
+    const blogs: { blogId: string, displayName: string }[] = [];
+
+    for (const blogDoc of blogsSnapshot.docs) {
+      const blogId = blogDoc.id;
+      console.log(`🔍 블로그 ${blogId} 설정 확인 중...`);
+
+      try {
+        // settings 문서 확인
+        const settingsRef = doc(db, 'blogs', blogId, 'data', 'settings');
+        const settingsSnap = await getDoc(settingsRef);
+
+        console.log(`📋 ${blogId}/data/settings 존재:`, settingsSnap.exists());
+
+        // settings가 없어도 블로그는 추가 (기본값 사용)
+        const blog = {
+          blogId,
+          displayName: getDisplayName(blogId)
+        };
+        blogs.push(blog);
+        console.log(`✅ 블로그 추가됨:`, blog);
+      } catch (error) {
+        console.warn(`❌ 블로그 ${blogId} 설정 확인 실패:`, error);
+      }
+    }
+
+    console.log('🎯 최종 블로그 목록:', blogs);
+    return blogs;
+  } catch (error) {
+    console.error('❌ 블로그 목록 조회 실패:', error);
+    return [];
+  }
+}
+
+/**
+ * 블로그 ID에 따른 표시 이름 생성
+ */
+function getDisplayName(blogId: string): string {
+  return blogId;
 }
 
 /**
