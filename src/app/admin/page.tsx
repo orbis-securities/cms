@@ -303,7 +303,7 @@ export default function AdminPage() {
               <ul className="text-blue-800 text-sm space-y-1">
                 <li>• 새 블로그 생성 시 기본 카테고리가 자동으로 추가됩니다</li>
                 <li>• 카테고리는 언제든지 추가/삭제할 수 있습니다</li>
-                <li>• 설정 변경 후 반드시 "저장" 버튼을 눌러주세요</li>
+                <li>• 설정 변경 후 반드시 &quot;저장&quot; 버튼을 눌러주세요</li>
               </ul>
             </div>
           </div>

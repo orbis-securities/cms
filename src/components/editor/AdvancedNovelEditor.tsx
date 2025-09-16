@@ -337,7 +337,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       setContent(initialContent);
       editor.commands.setContent(initialContent);
     }
-  }, [initialContent, editor]);
+  }, [initialContent, editor, content]);
 
   // 자동 저장
   useEffect(() => {
