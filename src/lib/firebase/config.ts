@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-// import { getAuth } from 'firebase/auth';
+import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 
@@ -16,6 +16,7 @@ const firebaseConfig = {
 let app: FirebaseApp;
 let db: Firestore;
 let storage: FirebaseStorage;
+let auth: Auth;
 
 // Initialize Firebase only in browser environment or development
 if (typeof window !== 'undefined' || process.env.NODE_ENV === 'development') {
@@ -23,12 +24,14 @@ if (typeof window !== 'undefined' || process.env.NODE_ENV === 'development') {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     db = getFirestore(app);
     storage = getStorage(app);
+    auth = getAuth(app);
   } catch (error) {
     console.error('Firebase 초기화 오류:', error);
     // 더미 객체들을 생성해서 타입 오류 방지
     app = {} as FirebaseApp;
     db = {} as Firestore;
     storage = {} as FirebaseStorage;
+    auth = {} as Auth;
   }
 } else {
   // 서버 사이드에서는 더미 객체 생성
@@ -36,7 +39,8 @@ if (typeof window !== 'undefined' || process.env.NODE_ENV === 'development') {
   app = {} as FirebaseApp;
   db = {} as Firestore;
   storage = {} as FirebaseStorage;
+  auth = {} as Auth;
 }
 
-export { db, storage };
+export { db, storage, auth };
 export default app;
