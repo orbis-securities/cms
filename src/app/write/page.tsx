@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import AdvancedNovelEditor from '@/components/editor/AdvancedNovelEditor';
@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 
-export default function WritePage() {
+function WritePageContent() {
   const searchParams = useSearchParams();
   const editPostId = searchParams.get('id');
   const editCategory = searchParams.get('category');
@@ -838,5 +838,18 @@ export default function WritePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function WritePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p className="text-gray-600">페이지를 불러오는 중...</p>
+      </div>
+    </div>}>
+      <WritePageContent />
+    </Suspense>
   );
 }
