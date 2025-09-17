@@ -352,11 +352,37 @@ export async function getPostsByTag(
   }
 }
 
+export interface BlogDesignSettings {
+  fontFamily: 'Inter' | 'Pretendard' | 'Noto Sans KR' | 'Georgia' | 'Times New Roman';
+  heading: {
+    fontSize: string;
+    color: string;
+  };
+  subheading: {
+    fontSize: string;
+    color: string;
+  };
+  list: {
+    fontSize: string;
+    color: string;
+  };
+  highlight: {
+    fontSize: string;
+    color: string;
+  };
+  description: {
+    fontSize: string;
+    color: string;
+  };
+  textTone: 'professional' | 'casual' | 'technical';
+}
+
 /**
- * 블로그 설정 가져오기 (카테고리, 태그 등)
+ * 블로그 설정 가져오기 (카테고리, 디자인 등)
  */
 export async function getBlogSettings(blogId: string): Promise<{
   categories: string[];
+  design?: BlogDesignSettings;
 } | null> {
   try {
     console.log('🔍 getBlogSettings 호출:', { blogId, type: typeof blogId });
@@ -373,9 +399,12 @@ export async function getBlogSettings(blogId: string): Promise<{
       const data = settingsSnap.data();
       console.log('📋 Settings 데이터:', data);
       const categories = Array.isArray(data.categories) ? data.categories : [];
+      const design = data.design || getDefaultDesignSettings(blogId);
       console.log('📝 카테고리 배열:', categories);
+      console.log('🎨 디자인 설정:', design);
       return {
-        categories
+        categories,
+        design
       };
     }
 
@@ -396,6 +425,7 @@ export async function saveBlogSettings(
   blogId: string,
   settings: {
     categories: string[];
+    design?: BlogDesignSettings;
   }
 ): Promise<void> {
   try {
@@ -422,19 +452,61 @@ export async function saveBlogSettings(
  */
 function getDefaultBlogSettings(blogId: string): {
   categories: string[];
+  design: BlogDesignSettings;
 } {
   switch (blogId) {
     case 'axi':
       return {
-        categories: ['시장 분석', '거래 전략', '경제 뉴스', '테크니컬 분석', '투자 팁']
+        categories: ['시장 분석', '거래 전략', '경제 뉴스', '테크니컬 분석', '투자 팁'],
+        design: getDefaultDesignSettings('axi')
       };
     case 'orbisLanding':
       return {
-        categories: ['회사 소식', '제품 업데이트', '고객 사례', '기술 블로그', '이벤트']
+        categories: ['회사 소식', '제품 업데이트', '고객 사례', '기술 블로그', '이벤트'],
+        design: getDefaultDesignSettings('orbisLanding')
       };
     default:
       return {
-        categories: ['일반', '공지사항']
+        categories: ['일반', '공지사항'],
+        design: getDefaultDesignSettings('default')
+      };
+  }
+}
+
+/**
+ * 블로그별 기본 디자인 설정
+ */
+function getDefaultDesignSettings(blogId: string): BlogDesignSettings {
+  switch (blogId) {
+    case 'axi':
+      return {
+        fontFamily: 'Pretendard',
+        heading: { fontSize: '28px', color: '#1F2937' },
+        subheading: { fontSize: '22px', color: '#374151' },
+        list: { fontSize: '16px', color: '#1F2937' },
+        highlight: { fontSize: '16px', color: '#FBBF24' },
+        description: { fontSize: '14px', color: '#6B7280' },
+        textTone: 'professional'
+      };
+    case 'orbisLanding':
+      return {
+        fontFamily: 'Inter',
+        heading: { fontSize: '24px', color: '#1E40AF' },
+        subheading: { fontSize: '20px', color: '#3B82F6' },
+        list: { fontSize: '16px', color: '#1F2937' },
+        highlight: { fontSize: '16px', color: '#3B82F6' },
+        description: { fontSize: '14px', color: '#64748B' },
+        textTone: 'casual'
+      };
+    default:
+      return {
+        fontFamily: 'Noto Sans KR',
+        heading: { fontSize: '26px', color: '#000000' },
+        subheading: { fontSize: '20px', color: '#374151' },
+        list: { fontSize: '16px', color: '#1F2937' },
+        highlight: { fontSize: '16px', color: '#FBBF24' },
+        description: { fontSize: '14px', color: '#6B7280' },
+        textTone: 'professional'
       };
   }
 }

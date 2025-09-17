@@ -158,8 +158,8 @@ function WritePageContent() {
   }, []);
 
   const handleSave = (content: string) => {
-    setPostContent(content);
-    toast.success('포스트가 자동 저장되었습니다');
+    // 자동 저장 비활성화 (수동으로만 저장)
+    // setPostContent(content);
   };
 
   const handleSaveAsDraft = async () => {
@@ -182,9 +182,12 @@ function WritePageContent() {
         // 수정 모드: 업데이트
         console.log('💾 포스트 수정 저장 시작:', postTitle);
 
+        // 에디터에서 최신 내용 가져오기
+        const editorContent = editorRef.current?.getHTML?.() || postContent;
+
         await updatePostInFirestore(selectedBlog, currentPostId, {
           title: postTitle,
-          content: postContent || '<p>내용을 작성해주세요...</p>',
+          content: editorContent || '<p>내용을 작성해주세요...</p>',
           categories: [category],
           tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
           status: 'draft',
@@ -200,9 +203,12 @@ function WritePageContent() {
         // 새 글 모드: 생성
         console.log('💾 포스트 초안 저장 시작:', postTitle);
 
+        // 에디터에서 최신 내용 가져오기
+        const editorContent = editorRef.current?.getHTML?.() || postContent;
+
         const postId = await savePostToFirestore(
           postTitle,
-          postContent || '<p>내용을 작성해주세요...</p>',
+          editorContent || '<p>내용을 작성해주세요...</p>',
           selectedBlog,
           {
             category,
@@ -571,6 +577,10 @@ function WritePageContent() {
                     initialContent={postContent}
                     onSave={handleSave}
                     blogId="demo-blog"
+                    selectedBlog={selectedBlog}
+                    availableBlogs={availableBlogs}
+                    onBlogChange={setSelectedBlog}
+                    getDesignSettings={getBlogSettings}
                     ref={editorRef}
                   />
                 )}

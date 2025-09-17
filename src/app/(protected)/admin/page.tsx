@@ -13,12 +13,13 @@ import {
   AlertTriangle,
   CheckCircle
 } from 'lucide-react';
-import { getBlogSettings, saveBlogSettings, getAllBlogs } from '@/lib/firebase/posts';
+import { getBlogSettings, saveBlogSettings, getAllBlogs, BlogDesignSettings } from '@/lib/firebase/posts';
 import { toast, Toaster } from 'sonner';
 
 interface BlogConfig {
   blogId: string;
   categories: string[];
+  design: BlogDesignSettings;
 }
 
 export default function AdminPage() {
@@ -27,6 +28,7 @@ export default function AdminPage() {
   const [editingBlog, setEditingBlog] = useState<string | null>(null);
   const [newBlogId, setNewBlogId] = useState('');
   const [showNewBlogForm, setShowNewBlogForm] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>(''); // 각 블로그별 활성 탭
 
   // 초기 블로그 목록 로드
   useEffect(() => {
@@ -48,7 +50,16 @@ export default function AdminPage() {
           if (settings) {
             blogConfigs.push({
               blogId: blog.blogId,
-              categories: settings.categories
+              categories: settings.categories,
+              design: settings.design || {
+                fontFamily: 'Pretendard',
+                heading: { fontSize: '28px', color: '#1F2937' },
+                subheading: { fontSize: '22px', color: '#374151' },
+                list: { fontSize: '16px', color: '#1F2937' },
+                highlight: { fontSize: '16px', color: '#FBBF24' },
+                description: { fontSize: '14px', color: '#6B7280' },
+                textTone: 'professional'
+              }
             });
           }
         } catch (error) {
@@ -76,11 +87,21 @@ export default function AdminPage() {
     try {
       const newBlog: BlogConfig = {
         blogId: newBlogId,
-        categories: ['일반']
+        categories: ['일반'],
+        design: {
+          fontFamily: 'Pretendard',
+          heading: { fontSize: '28px', color: '#1F2937' },
+          subheading: { fontSize: '22px', color: '#374151' },
+          list: { fontSize: '16px', color: '#1F2937' },
+          highlight: { fontSize: '16px', color: '#FBBF24' },
+          description: { fontSize: '14px', color: '#6B7280' },
+          textTone: 'professional'
+        }
       };
 
       await saveBlogSettings(newBlogId, {
-        categories: newBlog.categories
+        categories: newBlog.categories,
+        design: newBlog.design
       });
 
       setBlogs([...blogs, newBlog]);
@@ -97,11 +118,13 @@ export default function AdminPage() {
   const handleSaveBlog = async (blog: BlogConfig) => {
     try {
       await saveBlogSettings(blog.blogId, {
-        categories: blog.categories
+        categories: blog.categories,
+        design: blog.design
       });
 
       toast.success(`블로그 "${blog.blogId}" 설정이 저장되었습니다!`);
       setEditingBlog(null);
+      setActiveTab(''); // 탭 초기화
     } catch (error) {
       console.error('블로그 설정 저장 실패:', error);
       toast.error('설정 저장에 실패했습니다.');
@@ -255,7 +278,36 @@ export default function AdminPage() {
                 </div>
 
                 <div className="p-6">
-                  {/* 카테고리 관리 */}
+                  {/* 탭 메뉴 */}
+                  {editingBlog === blog.blogId && (
+                    <div className="mb-6">
+                      <div className="flex border-b">
+                        <button
+                          onClick={() => setActiveTab(`${blog.blogId}-categories`)}
+                          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                            activeTab === `${blog.blogId}-categories` || !activeTab
+                              ? 'border-blue-500 text-blue-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700'
+                          }`}
+                        >
+                          카테고리 관리
+                        </button>
+                        <button
+                          onClick={() => setActiveTab(`${blog.blogId}-design`)}
+                          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                            activeTab === `${blog.blogId}-design`
+                              ? 'border-purple-500 text-purple-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700'
+                          }`}
+                        >
+                          디자인 설정
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 카테고리 관리 탭 */}
+                  {(!activeTab || activeTab === `${blog.blogId}-categories`) && (
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="font-medium text-gray-900">카테고리</h4>
@@ -288,6 +340,237 @@ export default function AdminPage() {
                       ))}
                     </div>
                   </div>
+                  )}
+
+                  {/* 디자인 설정 탭 */}
+                  {activeTab === `${blog.blogId}-design` && editingBlog === blog.blogId && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-6">AI 디자인 설정</h4>
+
+                      {/* 폰트 패밀리 */}
+                      <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">폰트 패밀리</label>
+                        <select
+                          value={blog.design.fontFamily}
+                          onChange={(e) => {
+                            const updatedBlogs = [...blogs];
+                            updatedBlogs[blogIndex].design.fontFamily = e.target.value as any;
+                            setBlogs(updatedBlogs);
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        >
+                          <option value="Pretendard">Pretendard (한국어 최적화)</option>
+                          <option value="Inter">Inter (모던)</option>
+                          <option value="Noto Sans KR">Noto Sans KR (구글 폰트)</option>
+                          <option value="Georgia">Georgia (세리프)</option>
+                          <option value="Times New Roman">Times New Roman (클래식)</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-6">
+                        {/* 제목 설정 */}
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <h5 className="font-semibold text-gray-800 mb-3">제목 (Heading)</h5>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">폰트 사이즈</label>
+                              <select
+                                value={blog.design.heading.fontSize}
+                                onChange={(e) => {
+                                  const updatedBlogs = [...blogs];
+                                  updatedBlogs[blogIndex].design.heading.fontSize = e.target.value;
+                                  setBlogs(updatedBlogs);
+                                }}
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                              >
+                                <option value="20px">20px (작게)</option>
+                                <option value="24px">24px (보통)</option>
+                                <option value="28px">28px (크게)</option>
+                                <option value="32px">32px (매우 크게)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">색상</label>
+                              <input
+                                type="color"
+                                value={blog.design.heading.color}
+                                onChange={(e) => {
+                                  const updatedBlogs = [...blogs];
+                                  updatedBlogs[blogIndex].design.heading.color = e.target.value;
+                                  setBlogs(updatedBlogs);
+                                }}
+                                className="w-full h-8 border border-gray-300 rounded cursor-pointer"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 부제목 설정 */}
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <h5 className="font-semibold text-gray-800 mb-3">부제목 (Subheading)</h5>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">폰트 사이즈</label>
+                              <select
+                                value={blog.design.subheading.fontSize}
+                                onChange={(e) => {
+                                  const updatedBlogs = [...blogs];
+                                  updatedBlogs[blogIndex].design.subheading.fontSize = e.target.value;
+                                  setBlogs(updatedBlogs);
+                                }}
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                              >
+                                <option value="16px">16px (작게)</option>
+                                <option value="18px">18px (보통)</option>
+                                <option value="20px">20px (크게)</option>
+                                <option value="22px">22px (매우 크게)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">색상</label>
+                              <input
+                                type="color"
+                                value={blog.design.subheading.color}
+                                onChange={(e) => {
+                                  const updatedBlogs = [...blogs];
+                                  updatedBlogs[blogIndex].design.subheading.color = e.target.value;
+                                  setBlogs(updatedBlogs);
+                                }}
+                                className="w-full h-8 border border-gray-300 rounded cursor-pointer"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 목록 설정 */}
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <h5 className="font-semibold text-gray-800 mb-3">목록 (List)</h5>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">폰트 사이즈</label>
+                              <select
+                                value={blog.design.list.fontSize}
+                                onChange={(e) => {
+                                  const updatedBlogs = [...blogs];
+                                  updatedBlogs[blogIndex].design.list.fontSize = e.target.value;
+                                  setBlogs(updatedBlogs);
+                                }}
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                              >
+                                <option value="14px">14px (작게)</option>
+                                <option value="16px">16px (보통)</option>
+                                <option value="18px">18px (크게)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">색상</label>
+                              <input
+                                type="color"
+                                value={blog.design.list.color}
+                                onChange={(e) => {
+                                  const updatedBlogs = [...blogs];
+                                  updatedBlogs[blogIndex].design.list.color = e.target.value;
+                                  setBlogs(updatedBlogs);
+                                }}
+                                className="w-full h-8 border border-gray-300 rounded cursor-pointer"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 하이라이트 설정 */}
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <h5 className="font-semibold text-gray-800 mb-3">하이라이트 (Highlight)</h5>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">폰트 사이즈</label>
+                              <select
+                                value={blog.design.highlight.fontSize}
+                                onChange={(e) => {
+                                  const updatedBlogs = [...blogs];
+                                  updatedBlogs[blogIndex].design.highlight.fontSize = e.target.value;
+                                  setBlogs(updatedBlogs);
+                                }}
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                              >
+                                <option value="14px">14px (작게)</option>
+                                <option value="16px">16px (보통)</option>
+                                <option value="18px">18px (크게)</option>
+                                <option value="20px">20px (매우 크게)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">색상</label>
+                              <input
+                                type="color"
+                                value={blog.design.highlight.color}
+                                onChange={(e) => {
+                                  const updatedBlogs = [...blogs];
+                                  updatedBlogs[blogIndex].design.highlight.color = e.target.value;
+                                  setBlogs(updatedBlogs);
+                                }}
+                                className="w-full h-8 border border-gray-300 rounded cursor-pointer"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 설명 설정 */}
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <h5 className="font-semibold text-gray-800 mb-3">설명 (Description)</h5>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">폰트 사이즈</label>
+                              <select
+                                value={blog.design.description.fontSize}
+                                onChange={(e) => {
+                                  const updatedBlogs = [...blogs];
+                                  updatedBlogs[blogIndex].design.description.fontSize = e.target.value;
+                                  setBlogs(updatedBlogs);
+                                }}
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                              >
+                                <option value="12px">12px (작게)</option>
+                                <option value="14px">14px (보통)</option>
+                                <option value="16px">16px (크게)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">색상</label>
+                              <input
+                                type="color"
+                                value={blog.design.description.color}
+                                onChange={(e) => {
+                                  const updatedBlogs = [...blogs];
+                                  updatedBlogs[blogIndex].design.description.color = e.target.value;
+                                  setBlogs(updatedBlogs);
+                                }}
+                                className="w-full h-8 border border-gray-300 rounded cursor-pointer"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 텍스트 톤 */}
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                          <h5 className="font-semibold text-gray-800 mb-3">AI 텍스트 톤</h5>
+                          <select
+                            value={blog.design.textTone}
+                            onChange={(e) => {
+                              const updatedBlogs = [...blogs];
+                              updatedBlogs[blogIndex].design.textTone = e.target.value as any;
+                              setBlogs(updatedBlogs);
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          >
+                            <option value="professional">전문적 (Professional)</option>
+                            <option value="casual">친근한 (Casual)</option>
+                            <option value="technical">기술적 (Technical)</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))
