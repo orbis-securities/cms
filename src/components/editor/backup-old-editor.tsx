@@ -174,7 +174,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
   const [tablePosition, setTablePosition] = useState({ x: 0, y: 0 });
 
   // 분리된 훅들 사용
-  const { isImageUploading, handleImageUpload } = useImageUpload(blogId);
+  const { isImageUploading, handleImageUpload: hookImageUpload } = useImageUpload(blogId);
   const {
     showAICompletion,
     showAIDropdown,
