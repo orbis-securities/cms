@@ -176,16 +176,16 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
   // 분리된 훅들 사용
   const { isImageUploading, handleImageUpload: hookImageUpload } = useImageUpload(blogId);
   const {
-    showAICompletion,
-    showAIDropdown,
-    setShowAIDropdown,
-    selectedText,
-    aiCommand,
-    setAiCommand,
-    aiMode,
-    handleFullContentAI,
-    handleSelectedTextAI,
-    handleAIButtonClick
+    showAICompletion: hookShowAICompletion,
+    showAIDropdown: hookShowAIDropdown,
+    setShowAIDropdown: hookSetShowAIDropdown,
+    selectedText: hookSelectedText,
+    aiCommand: hookAiCommand,
+    setAiCommand: hookSetAiCommand,
+    aiMode: hookAiMode,
+    handleFullContentAI: hookHandleFullContentAI,
+    handleSelectedTextAI: hookHandleSelectedTextAI,
+    handleAIButtonClick: hookHandleAIButtonClick
   } = useAIFeatures(editor, selectedBlog, getDesignSettings);
 
   // 새로운 테두리 시스템 상태
