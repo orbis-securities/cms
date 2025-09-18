@@ -173,20 +173,8 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
   const [showTableEditor, setShowTableEditor] = useState(false);
   const [tablePosition, setTablePosition] = useState({ x: 0, y: 0 });
 
-  // 분리된 훅들 사용
+  // 분리된 훅들 사용 (이미지 업로드는 editor 없이 사용 가능)
   const { isImageUploading, handleImageUpload: hookImageUpload } = useImageUpload(blogId);
-  const {
-    showAICompletion: hookShowAICompletion,
-    showAIDropdown: hookShowAIDropdown,
-    setShowAIDropdown: hookSetShowAIDropdown,
-    selectedText: hookSelectedText,
-    aiCommand: hookAiCommand,
-    setAiCommand: hookSetAiCommand,
-    aiMode: hookAiMode,
-    handleFullContentAI: hookHandleFullContentAI,
-    handleSelectedTextAI: hookHandleSelectedTextAI,
-    handleAIButtonClick: hookHandleAIButtonClick
-  } = useAIFeatures(editor, selectedBlog, getDesignSettings);
 
   // 새로운 테두리 시스템 상태
   const [borderSelection, setBorderSelection] = useState<'all' | 'top' | 'bottom' | 'left' | 'right'>('all');
@@ -699,6 +687,20 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       }
     });
   }, [editor]);
+
+  // AI 기능 훅 (editor 정의 이후)
+  const {
+    showAICompletion: hookShowAICompletion,
+    showAIDropdown: hookShowAIDropdown,
+    setShowAIDropdown: hookSetShowAIDropdown,
+    selectedText: hookSelectedText,
+    aiCommand: hookAiCommand,
+    setAiCommand: hookSetAiCommand,
+    aiMode: hookAiMode,
+    handleFullContentAI: hookHandleFullContentAI,
+    handleSelectedTextAI: hookHandleSelectedTextAI,
+    handleAIButtonClick: hookHandleAIButtonClick
+  } = useAIFeatures(editor, selectedBlog, getDesignSettings);
 
   const removeActualBorderFromCell = useCallback((sides: string[]) => {
     if (!editor) {
