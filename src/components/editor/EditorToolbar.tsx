@@ -283,26 +283,40 @@ export default function EditorToolbar({
                 onChange={(e) => {
                   const lineHeight = e.target.value;
                   if (editor) {
-                    // 선택된 텍스트나 현재 문단에 행간 적용
+                    // 간단한 방법: 선택된 범위를 <span>으로 감싸고 line-height 적용
                     const { from, to } = editor.state.selection;
-                    editor.chain().focus().setTextSelection({ from, to }).run();
 
-                    // DOM 조작으로 선택된 영역에 line-height 적용
-                    const selection = window.getSelection();
-                    if (selection && selection.rangeCount > 0) {
-                      const range = selection.getRangeAt(0);
-                      const container = range.commonAncestorContainer;
-                      let element = container.nodeType === Node.TEXT_NODE
-                        ? container.parentElement
-                        : container as Element;
+                    if (from !== to) {
+                      // 텍스트가 선택된 경우
+                      const selectedText = editor.state.doc.textBetween(from, to);
+                      editor.chain()
+                        .focus()
+                        .deleteSelection()
+                        .insertContent(
+                          `<span style="line-height: ${lineHeight};">${selectedText}</span>`
+                        )
+                        .run();
+                    } else {
+                      // 선택이 없는 경우: 현재 커서가 있는 문단 전체에 적용
+                      const resolvedPos = editor.state.doc.resolve(from);
+                      const nodePos = resolvedPos.before(resolvedPos.depth);
+                      const node = resolvedPos.parent;
 
-                      // 가장 가까운 블록 요소 찾기
-                      while (element && !['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI'].includes(element.tagName)) {
-                        element = element.parentElement;
-                      }
+                      if (node && node.type.name === 'paragraph') {
+                        editor.chain()
+                          .focus()
+                          .setTextSelection({ from: nodePos + 1, to: nodePos + node.nodeSize - 1 })
+                          .run();
 
-                      if (element) {
-                        (element as HTMLElement).style.lineHeight = lineHeight;
+                        const paragraphText = editor.state.doc.textBetween(nodePos + 1, nodePos + node.nodeSize - 1);
+
+                        editor.chain()
+                          .focus()
+                          .deleteSelection()
+                          .insertContent(
+                            `<p style="line-height: ${lineHeight};">${paragraphText}</p>`
+                          )
+                          .run();
                       }
                     }
                   }
