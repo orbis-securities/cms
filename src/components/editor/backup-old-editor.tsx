@@ -175,6 +175,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
 
   // AI 관련 state들
   const [showAICompletion, setShowAICompletion] = useState(false);
+  const [showAIDropdown, setShowAIDropdown] = useState(false);
   const [selectedText, setSelectedText] = useState('');
 
   // 분리된 훅들 사용 (이미지 업로드는 editor 없이 사용 가능)
@@ -1140,9 +1141,11 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
 
       if (response.ok && data.success) {
         // 전체 내용을 AI 보강 결과로 교체
-        editor.commands.setContent(data.enhanced);
-        setShowAIDropdown(false);
-        toast.success('본문이 AI로 보강되었습니다!');
+        if (editor) {
+          editor.commands.setContent(data.enhanced);
+          setShowAIDropdown(false);
+          toast.success('본문이 AI로 보강되었습니다!');
+        }
       } else {
         throw new Error(data.error || 'AI 보강 실패');
       }
