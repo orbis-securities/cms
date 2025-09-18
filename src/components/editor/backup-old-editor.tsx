@@ -178,6 +178,11 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
   const [showAIDropdown, setShowAIDropdown] = useState(false);
   const [selectedText, setSelectedText] = useState('');
 
+  // AI 버튼 클릭 핸들러
+  const handleAIButtonClick = useCallback(() => {
+    setShowAIDropdown(!showAIDropdown);
+  }, [showAIDropdown]);
+
   // 분리된 훅들 사용 (이미지 업로드는 editor 없이 사용 가능)
   const { isImageUploading, handleImageUpload: hookImageUpload } = useImageUpload(blogId);
 
