@@ -178,6 +178,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
   const [showAIDropdown, setShowAIDropdown] = useState(false);
   const [selectedText, setSelectedText] = useState('');
   const [aiMode, setAiMode] = useState<'full' | 'selected'>('full');
+  const [aiCommand, setAiCommand] = useState('');
 
   // AI 버튼 클릭 핸들러
   const handleAIButtonClick = useCallback(() => {
