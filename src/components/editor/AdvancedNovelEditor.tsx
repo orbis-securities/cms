@@ -422,8 +422,6 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       try {
         const settings = await getDesignSettings(selectedBlog);
         if (settings?.design?.fontFamily) {
-          setCurrentFont(settings.design.fontFamily);
-
           const editorElement = document.querySelector('.ProseMirror');
           if (editorElement) {
             (editorElement as HTMLElement).style.fontFamily = settings.design.fontFamily;
