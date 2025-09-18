@@ -72,7 +72,7 @@ export default function AIDropdown({
         <div className="mb-3">
           <label className="block text-xs font-medium text-gray-600 mb-1">선택된 텍스트:</label>
           <div className="p-2 bg-gray-50 rounded text-xs max-h-20 overflow-y-auto">
-            "{selectedText.length > 100 ? selectedText.substring(0, 100) + '...' : selectedText}"
+            &ldquo;{selectedText.length > 100 ? selectedText.substring(0, 100) + '...' : selectedText}&rdquo;
           </div>
         </div>
       )}
