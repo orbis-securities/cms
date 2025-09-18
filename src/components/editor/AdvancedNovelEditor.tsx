@@ -122,7 +122,9 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       Highlight.configure({
         multicolor: true,
       }),
-      Table,
+      Table.configure({
+        resizable: true,
+      }),
       TableRow,
       TableHeader.configure({
         HTMLAttributes: {
@@ -374,16 +376,34 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
 
   // 표 생성 함수
   const handleCreateTable = useCallback(() => {
-    if (!editor) return;
+    if (!editor) {
+      console.error('❌ 표 생성 실패: 에디터가 없음');
+      toast.error('에디터가 준비되지 않았습니다.');
+      return;
+    }
 
-    editor
-      .chain()
-      .focus()
-      .insertTable({ rows: tableRows, cols: tableCols, withHeaderRow: false })
-      .run();
+    console.log('📊 표 생성 시작:', { rows: tableRows, cols: tableCols });
 
-    setShowTableDropdown(false);
-    toast.success(`${tableRows}×${tableCols} 표가 생성되었습니다!`);
+    try {
+      const result = editor
+        .chain()
+        .focus()
+        .insertTable({ rows: tableRows, cols: tableCols, withHeaderRow: false })
+        .run();
+
+      console.log('✅ 표 생성 결과:', result);
+
+      if (result) {
+        setShowTableDropdown(false);
+        toast.success(`${tableRows}×${tableCols} 표가 생성되었습니다!`);
+      } else {
+        console.warn('⚠️ 표 생성 명령이 실행되지 않음');
+        toast.warning('표 생성에 실패했습니다. 커서 위치를 확인해주세요.');
+      }
+    } catch (error) {
+      console.error('❌ 표 생성 중 에러:', error);
+      toast.error('표 생성 중 오류가 발생했습니다.');
+    }
   }, [editor, tableRows, tableCols]);
 
   // 표 클릭 감지 및 편집 패널 표시

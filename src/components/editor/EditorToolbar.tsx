@@ -79,11 +79,16 @@ export default function EditorToolbar({
       if (showTextFormattingDropdown && !target.closest('.text-formatting-container')) {
         onTextFormattingClick();
       }
+
+      // 표 드롭다운 외부 클릭 시 닫기
+      if (showTableDropdown && !target.closest('.table-dropdown-container')) {
+        setShowTableDropdown(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showTextFormattingDropdown, onTextFormattingClick]);
+  }, [showTextFormattingDropdown, onTextFormattingClick, showTableDropdown]);
 
   // 모달 닫힐 때 최근 색상 업데이트
   useEffect(() => {
@@ -460,7 +465,7 @@ export default function EditorToolbar({
       </button>
 
       {/* 표 생성 */}
-      <div className="relative">
+      <div className="relative table-dropdown-container">
         <button
           onClick={() => setShowTableDropdown(!showTableDropdown)}
           className="p-2 rounded hover:bg-gray-100"
