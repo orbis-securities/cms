@@ -858,7 +858,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
 
     // 디버그 버튼과 동일한 방식으로 직접 적용
     try {
-      if (borderSelection === 'none') {
+      if (borderStyle === 'none') {
         // 모든 테두리 제거 - DOM 직접 조작
         const selectedCells = getActualSelectedCells();
         const cellsToProcess = selectedCells.length > 0 ? selectedCells : (getCurrentCell() ? [getCurrentCell()!] : []);
