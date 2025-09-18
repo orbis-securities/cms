@@ -173,6 +173,10 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
   const [showTableEditor, setShowTableEditor] = useState(false);
   const [tablePosition, setTablePosition] = useState({ x: 0, y: 0 });
 
+  // AI 관련 state들
+  const [showAICompletion, setShowAICompletion] = useState(false);
+  const [selectedText, setSelectedText] = useState('');
+
   // 분리된 훅들 사용 (이미지 업로드는 editor 없이 사용 가능)
   const { isImageUploading, handleImageUpload: hookImageUpload } = useImageUpload(blogId);
 
