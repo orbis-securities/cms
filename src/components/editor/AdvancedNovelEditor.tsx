@@ -58,7 +58,7 @@ interface AdvancedNovelEditorProps {
 
 export interface AdvancedNovelEditorRef {
   chain: () => unknown | undefined;
-  getHTML: () => string;
+  getHTML?: () => string;
 }
 
 const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEditorProps>(({

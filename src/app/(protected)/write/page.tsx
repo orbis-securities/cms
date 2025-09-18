@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import AdvancedNovelEditor from '@/components/editor/AdvancedNovelEditor';
+import AdvancedNovelEditor, { AdvancedNovelEditorRef } from '@/components/editor/AdvancedNovelEditor';
 import { uploadImageToStorage, compressImage } from '@/lib/firebase/storage';
 import { savePostToFirestore, getBlogSettings, getPostById, updatePostInFirestore, changePostCategory, getAllBlogs } from '@/lib/firebase/posts';
 import { Timestamp } from 'firebase/firestore';
@@ -49,7 +49,7 @@ function WritePageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentPostId, setCurrentPostId] = useState(editPostId || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const editorRef = useRef<{ getHTML?: () => string; chain: () => any } | null>(null);
+  const editorRef = useRef<AdvancedNovelEditorRef>(null);
 
   // 블로그 목록 로드
   useEffect(() => {
@@ -183,7 +183,7 @@ function WritePageContent() {
         console.log('💾 포스트 수정 저장 시작:', postTitle);
 
         // 에디터에서 최신 내용 가져오기
-        const editorContent = (editorRef.current as any)?.getHTML?.() || postContent;
+        const editorContent = editorRef.current?.getHTML?.() || postContent;
 
         await updatePostInFirestore(selectedBlog, currentPostId, {
           title: postTitle,
@@ -204,7 +204,7 @@ function WritePageContent() {
         console.log('💾 포스트 초안 저장 시작:', postTitle);
 
         // 에디터에서 최신 내용 가져오기
-        const editorContent = (editorRef.current as any)?.getHTML?.() || postContent;
+        const editorContent = editorRef.current?.getHTML?.() || postContent;
 
         const postId = await savePostToFirestore(
           postTitle,
