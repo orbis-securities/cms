@@ -287,30 +287,6 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
     toast.info('테두리 시스템이 준비 중입니다...');
   }, [borderSelection, borderWidth, borderStyle, borderColor]);
 
-  // 이미지 업로드 핸들러
-  const handleImageUpload = useCallback(async (file: File): Promise<string> => {
-    setIsImageUploading(true);
-    try {
-      console.log('📁 이미지 업로드 시작:', file.name, file.type, file.size);
-      
-      // 이미지 압축
-      const compressedFile = await compressImage(file, 1200, 0.8);
-      console.log('🗜️ 이미지 압축 완료:', compressedFile.size);
-      
-      const url = await uploadImageToStorage(compressedFile, blogId);
-      console.log('✅ Firebase 업로드 완료:', url);
-      
-      toast.success(`이미지 업로드 완료: ${file.name}`);
-      return url;
-    } catch (error) {
-      console.error('❌ 이미지 업로드 에러:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      toast.error(`이미지 업로드 실패: ${errorMessage}`);
-      throw error;
-    } finally {
-      setIsImageUploading(false);
-    }
-  }, [blogId]);
 
   // Gemini AI 자동완성 핸들러
   const handleAICompletion = useCallback(async (prompt: string) => {
@@ -620,7 +596,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
           console.log('✅ 에디터에서 이미지 파일 확인');
           event.preventDefault();
           
-          handleImageUpload(files[0]).then((url) => {
+          hookImageUpload(files[0]).then((url) => {
             console.log('🖼️ 에디터에 이미지 삽입:', url);
             const { schema } = view.state;
             const pos = view.posAtCoords({ 
@@ -649,7 +625,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
         if (files.length > 0 && files[0].type.startsWith('image/')) {
           event.preventDefault();
           
-          handleImageUpload(files[0]).then((url) => {
+          hookImageUpload(files[0]).then((url) => {
             const { schema } = view.state;
             const imageNode = schema.nodes.image.create({ src: url });
             const transaction = view.state.tr.replaceSelectionWith(imageNode);
@@ -1736,7 +1712,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
                 const file = (e.target as HTMLInputElement).files?.[0];
                 console.log('📂 파일 선택됨:', file?.name, file?.type);
                 if (file) {
-                  handleImageUpload(file).then((url) => {
+                  hookImageUpload(file).then((url) => {
                     console.log('🖼️ 에디터에 이미지 삽입:', url);
                     editor?.chain().focus().setImage({ src: url }).run();
                   }).catch(error => {
