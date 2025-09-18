@@ -642,7 +642,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       },
     },
     onUpdate: ({ editor }) => {
-      const html = editor.getHTML();
+      const html = editor?.getHTML() || '';
       setContent(html);
     },
   });
@@ -711,7 +711,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
     console.log('🔍 TipTap 선택 상태 분석 시작');
 
     // 1. TipTap editor selection 확인
-    const selection = editor.state.selection;
+    const selection = editor?.state?.selection;
     console.log('📍 TipTap selection:', {
       type: selection.constructor.name,
       from: selection.from,
@@ -837,7 +837,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
     console.log('📊 셀 선택 상태:', { isTableCell, isTableHeader });
 
     // 선택된 노드 정보
-    const selection = editor.state.selection;
+    const selection = editor?.state?.selection;
     console.log('📍 현재 선택:', selection);
 
     // DOM 레벨에서 셀 확인
@@ -964,7 +964,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
             const isRight = pos.col === maxCol;
 
             // 각 셀을 focus하고 해당하는 외곽 테두리만 적용
-            const selection = editor.state.selection;
+            const selection = editor?.state?.selection;
             const cellElement = cell;
 
             // TipTap 셀 선택 후 속성 적용 (복잡하므로 DOM 직접 조작으로 임시 처리)
@@ -1040,7 +1040,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
 
     // 적용 결과 확인
     setTimeout(() => {
-      console.log('📋 적용 후 HTML:', editor.getHTML());
+      console.log('📋 적용 후 HTML:', editor?.getHTML() || '');
     }, 100);
 
     toast.success(`${selectionText[borderSelection]}가 적용되었습니다!`);
@@ -1162,10 +1162,15 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
   const handleSelectedTextAI = useCallback(async (command: string) => {
     if (!selectedText.trim() || !command.trim() || !selectedBlog) return;
 
+    if (!editor) {
+      toast.error('에디터가 준비되지 않았습니다.');
+      return;
+    }
+
     setShowAICompletion(true);
     try {
       // 전체 본문 컨텍스트 포함
-      const fullContent = editor.getHTML();
+      const fullContent = editor?.getHTML() || '';
 
       // 선택된 블로그의 디자인 설정 가져오기
       const designPrompt = await getDesignPrompt(selectedBlog);
@@ -1185,7 +1190,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
 
       if (response.ok && data.success) {
         // 선택된 텍스트를 AI 결과로 교체
-        const { from, to } = editor.state.selection;
+        const { from, to } = editor?.state?.selection;
         editor.chain().focus().deleteRange({ from, to }).insertContent(data.result).run();
         setShowAIDropdown(false);
         toast.success('텍스트가 AI로 개선되었습니다!');
@@ -1327,7 +1332,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
                         if (aiMode === 'selected') {
                           handleSelectedTextAI(aiCommand);
                         } else {
-                          const fullContent = editor.getHTML();
+                          const fullContent = editor?.getHTML() || '';
                           handleFullContentAI(fullContent, aiCommand);
                         }
                       }
@@ -1341,7 +1346,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
                       if (aiMode === 'selected') {
                         handleSelectedTextAI(aiCommand);
                       } else {
-                        const fullContent = editor.getHTML();
+                        const fullContent = editor?.getHTML() || '';
                         handleFullContentAI(fullContent, aiCommand);
                       }
                     }}
