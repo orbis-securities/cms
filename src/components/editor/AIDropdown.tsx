@@ -37,7 +37,7 @@ export default function AIDropdown({
   if (!showAIDropdown) return null;
 
   return (
-    <div className="ai-dropdown-container absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg p-4 z-20 min-w-[320px]">
+    <div className="ai-dropdown-container absolute top-12 left-0 bg-white border rounded-lg shadow-lg p-4 z-20 min-w-[320px] max-w-[400px]">
       <h4 className="font-semibold mb-3 flex items-center gap-2">
         <Sparkles className="w-4 h-4 text-purple-600" />
         {aiMode === 'selected' ? 'AI 텍스트 리라이팅' : 'AI 본문 보강'}

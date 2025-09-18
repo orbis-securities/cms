@@ -368,11 +368,16 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       if (showTableEditor && !target.closest('.table-editor-panel') && !target.closest('table')) {
         setShowTableEditor(false);
       }
+
+      // AI 드롭다운 외부 클릭 시 닫기
+      if (showAIDropdown && !target.closest('.ai-dropdown-container') && !target.closest('.ai-button-container')) {
+        setShowAIDropdown(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showTableDropdown, showTableEditor]);
+  }, [showTableDropdown, showTableEditor, showAIDropdown]);
 
   // 표 생성 함수
   const handleCreateTable = useCallback(() => {

@@ -14,7 +14,8 @@ import {
   ImageIcon,
   Type,
   Palette,
-  Sparkles
+  Sparkles,
+  Smile
 } from 'lucide-react';
 // import ColorPalette from './ColorPalette';
 // import FontSelector from './FontSelector';
@@ -54,6 +55,7 @@ export default function EditorToolbar({
   const [currentSessionColors, setCurrentSessionColors] = useState<string[]>([]);
   const [recentBgColors, setRecentBgColors] = useState<string[]>([]);
   const [currentSessionBgColors, setCurrentSessionBgColors] = useState<string[]>([]);
+  const [showEmojiDropdown, setShowEmojiDropdown] = useState(false);
 
   // 최근 색상 불러오기 (모달 열 때)
   useEffect(() => {
@@ -84,11 +86,23 @@ export default function EditorToolbar({
       if (showTableDropdown && !target.closest('.table-dropdown-container')) {
         setShowTableDropdown(false);
       }
+
+      // 이모지 드롭다운 외부 클릭 시 닫기
+      if (showEmojiDropdown && !target.closest('.emoji-dropdown-container')) {
+        setShowEmojiDropdown(false);
+      }
+
+      // AI 드롭다운 외부 클릭 시 닫기
+      // showAICompletion 대신 실제 AI 드롭다운 표시 상태를 확인해야 함
+      // 일단 주석 처리 - AdvancedNovelEditor에서 처리하도록 함
+      // if (showAIDropdown && !target.closest('.ai-dropdown-container') && !target.closest('.ai-button-container')) {
+      //   onAIButtonClick();
+      // }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showTextFormattingDropdown, onTextFormattingClick, showTableDropdown]);
+  }, [showTextFormattingDropdown, onTextFormattingClick, showTableDropdown, showEmojiDropdown, showAICompletion, onAIButtonClick]);
 
   // 모달 닫힐 때 최근 색상 업데이트
   useEffect(() => {
@@ -151,7 +165,7 @@ export default function EditorToolbar({
   return (
     <div className="border-b p-2 flex items-center gap-1 bg-gray-50">
       {/* AI 버튼 */}
-      <div className="relative">
+      <div className="relative ai-button-container">
         <button
           onClick={onAIButtonClick}
           disabled={showAICompletion}
@@ -169,11 +183,10 @@ export default function EditorToolbar({
       <div className="relative text-formatting-container">
         <button
           onClick={onTextFormattingClick}
-          className="px-3 py-2 rounded hover:bg-gray-100 border border-gray-200 text-xs font-medium text-gray-700 flex items-center gap-2"
-          title="텍스트 포매팅 (색상, 폰트, 크기, 굵기, 기울기)"
+          className="p-2 rounded hover:bg-gray-100 border border-gray-200"
+          title="텍스트 포매팅 (색상, 정렬, 스타일)"
         >
           <Type className="w-4 h-4" />
-          텍스트
         </button>
 
         {/* 텍스트 포매팅 드롭다운 (심플 버전) */}
@@ -418,6 +431,62 @@ export default function EditorToolbar({
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 이모지 선택기 */}
+      <div className="relative emoji-dropdown-container">
+        <button
+          onClick={() => setShowEmojiDropdown(!showEmojiDropdown)}
+          className="p-2 rounded hover:bg-gray-100 border border-gray-200"
+          title="이모지 삽입"
+        >
+          <Smile className="w-4 h-4" />
+        </button>
+
+        {showEmojiDropdown && (
+          <div className="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg p-4 z-20 w-72">
+            <h4 className="font-semibold mb-3 flex items-center gap-2">
+              <Smile className="w-4 h-4 text-yellow-600" />
+              이모지 선택
+            </h4>
+
+            {/* 자주 사용하는 이모지들 */}
+            <div className="grid grid-cols-8 gap-2 mb-3">
+              {[
+                '😀', '😃', '😄', '😁', '😊', '😉', '😍', '🥰',
+                '😎', '🤔', '😅', '😂', '🤣', '😭', '😢', '😡',
+                '👍', '👎', '👌', '✌️', '🤞', '👏', '💪', '🙏',
+                '❤️', '💙', '💚', '💛', '💜', '🖤', '🤍', '🧡',
+                '🔥', '⭐', '✨', '💡', '💯', '🎉', '🎊', '🚀',
+                '📝', '📚', '💼', '🏆', '🎯', '⚡', '🌟', '💎'
+              ].map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => {
+                    if (editor) {
+                      editor.chain().focus().insertContent(emoji).run();
+                      // 모달 자동 닫기 제거 - 연속 입력 가능
+                    }
+                  }}
+                  className="w-8 h-8 text-lg rounded hover:bg-gray-100 flex items-center justify-center transition-all hover:scale-110"
+                  title={`${emoji} 삽입`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+
+            {/* 빠른 닫기 버튼 */}
+            <div className="text-center">
+              <button
+                onClick={() => setShowEmojiDropdown(false)}
+                className="px-3 py-1 text-xs border rounded hover:bg-gray-50"
+              >
+                닫기
+              </button>
             </div>
           </div>
         )}
