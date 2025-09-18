@@ -190,7 +190,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
 
   // 새로운 테두리 시스템 상태
   const [borderSelection, setBorderSelection] = useState<'all' | 'top' | 'bottom' | 'left' | 'right'>('all');
-  const [borderStyle, setBorderStyle] = useState<'solid' | 'none' | 'dotted' | 'double'>('solid');
+  const [borderStyle, setBorderStyle] = useState<'solid' | 'none' | 'dotted' | 'double' | 'dashed'>('solid');
   const [borderWidth, setBorderWidth] = useState<'1px' | '2px' | '3px' | '4px'>('1px');
   const [borderColor, setBorderColor] = useState('#374151');
 
