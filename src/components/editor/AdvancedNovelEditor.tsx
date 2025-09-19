@@ -30,6 +30,8 @@ import TableEditor from './TableEditor';
 import EditorToolbar from './EditorToolbar';
 import EditorStatusBar from './EditorStatusBar';
 import AIDropdown from './AIDropdown';
+import SpellCheckPanel from './SpellCheckPanel';
+import ImageToolbar from './ImageToolbar';
 
 // 코드 하이라이팅 설정
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -79,6 +81,14 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
   const [showTableEditor, setShowTableEditor] = useState(false);
   const [tablePosition, setTablePosition] = useState({ x: 0, y: 0 });
   const [showTextFormattingDropdown, setShowTextFormattingDropdown] = useState(false);
+  const [editorMode, setEditorMode] = useState<'visual' | 'html'>('visual');
+  const [htmlContent, setHtmlContent] = useState('');
+  const [summary, setSummary] = useState('');
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [showSpellCheck, setShowSpellCheck] = useState(false);
+  const [showImageToolbar, setShowImageToolbar] = useState(false);
+  const [imageToolbarPosition, setImageToolbarPosition] = useState({ x: 0, y: 0 });
+  const [selectedImageNode, setSelectedImageNode] = useState<any>(null);
 
   // 분리된 훅들 사용
   const { isImageUploading, handleImageUpload } = useImageUpload(blogId);
@@ -100,7 +110,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       }),
       Image.configure({
         HTMLAttributes: {
-          class: 'rounded-lg max-w-full h-auto',
+          class: 'max-w-full h-auto cursor-pointer',
         },
         allowBase64: true,
         inline: false,
@@ -311,6 +321,41 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       const html = editor.getHTML();
       setContent(html);
     },
+    onSelectionUpdate: ({ editor }) => {
+      // 선택 변경 시 이미지가 선택되었는지 확인
+      const { state } = editor;
+      const { selection } = state;
+      const { from, to } = selection;
+
+      // 선택된 노드가 이미지인지 확인
+      state.doc.nodesBetween(from, to, (node, pos) => {
+        if (node.type.name === 'image') {
+          console.log('🖼️ 이미지 노드 선택됨:', node.attrs);
+
+          // DOM에서 실제 이미지 엘리먼트 찾기
+          setTimeout(() => {
+            const editorElement = document.querySelector('.ProseMirror');
+            const images = editorElement?.querySelectorAll('img');
+            if (images) {
+              for (const img of Array.from(images)) {
+                if (img.src === node.attrs.src) {
+                  const rect = img.getBoundingClientRect();
+                  setImageToolbarPosition({
+                    x: rect.right + 10,
+                    y: rect.top
+                  });
+                  setSelectedImageNode(img);
+                  setShowImageToolbar(true);
+                  console.log('✅ 이미지 툴바 표시됨');
+                  break;
+                }
+              }
+            }
+          }, 100);
+          return false; // 첫 번째 이미지만 처리
+        }
+      });
+    },
   });
 
   // AI 기능 (editor 정의 후)
@@ -418,7 +463,24 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
     const handleClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
 
-      if (target.closest('table')) {
+      // 이미지 클릭 감지
+      if (target.tagName === 'IMG' || target.closest('img')) {
+        const img = target.tagName === 'IMG' ? target as HTMLImageElement : target.closest('img') as HTMLImageElement;
+        if (img) {
+          console.log('🖼️ 이미지 클릭 감지:', img.src);
+          const rect = img.getBoundingClientRect();
+          setImageToolbarPosition({
+            x: rect.right + 10,
+            y: rect.top
+          });
+          setSelectedImageNode(img);
+          setShowImageToolbar(true);
+          setShowTableEditor(false);
+          console.log('✅ 이미지 툴바 표시 설정 완료');
+        }
+      }
+      // 테이블 클릭 감지
+      else if (target.closest('table')) {
         const table = target.closest('table');
         if (table) {
           const rect = table.getBoundingClientRect();
@@ -427,15 +489,208 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
             y: rect.top
           });
           setShowTableEditor(true);
+          setShowImageToolbar(false); // 이미지 툴바는 닫기
         }
-      } else if (!target.closest('.table-editor-panel')) {
+      }
+      // 외부 클릭 시 모든 툴바 닫기
+      else if (!target.closest('.table-editor-panel') && !target.closest('.image-toolbar-panel')) {
         setShowTableEditor(false);
+        setShowImageToolbar(false);
       }
     };
 
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
   }, [editor]);
+
+  // 에디터 모드 변경 시 HTML 동기화
+  useEffect(() => {
+    if (editor) {
+      if (editorMode === 'html') {
+        // 비주얼 → HTML: 현재 에디터 내용을 HTML로 변환
+        setHtmlContent(editor.getHTML());
+      } else {
+        // HTML → 비주얼: HTML 내용을 에디터에 적용
+        if (htmlContent && htmlContent !== editor.getHTML()) {
+          editor.commands.setContent(htmlContent);
+        }
+      }
+    }
+  }, [editorMode, editor]);
+
+  // HTML 내용 변경 시 실시간 업데이트
+  const handleHtmlChange = (value: string) => {
+    setHtmlContent(value);
+    setContent(value); // 상위 컴포넌트에도 반영
+  };
+
+  // AI 요약 생성 함수
+  const handleGenerateSummary = async () => {
+    if (!content.trim()) return;
+
+    setIsGeneratingSummary(true);
+    try {
+      // HTML 태그 제거하여 순수 텍스트만 추출
+      const textContent = content.replace(/<[^>]*>/g, '').trim();
+
+      if (!textContent) {
+        setSummary('내용이 없어 요약할 수 없습니다.');
+        return;
+      }
+
+      const response = await fetch('/api/enhance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: textContent,
+          command: '다음 텍스트를 1-2줄로 간결하게 요약해주세요. 핵심 내용만 포함하고 한국어로 작성해주세요.',
+          context: `블로그 ID: ${selectedBlog || 'default'}, 요약 생성`
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // HTML 태그 제거 후 요약 결과 설정
+        const cleanSummary = data.enhanced?.replace(/<[^>]*>/g, '').trim() || '요약을 생성할 수 없습니다.';
+        setSummary(cleanSummary);
+      } else {
+        throw new Error(data.error || 'AI 요약 생성 실패');
+      }
+    } catch (error) {
+      console.error('❌ AI 요약 생성 오류:', error);
+      setSummary('요약 생성에 실패했습니다. 다시 시도해 주세요.');
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+  };
+
+  // 맞춤법 수정 적용 함수
+  const handleApplySpellFix = (original: string, suggestion: string) => {
+    if (!editor) return;
+
+    try {
+      // 현재 에디터의 HTML 내용 가져오기
+      const currentHTML = editor.getHTML();
+
+      // HTML에서 텍스트 노드만 찾아서 교체
+      const updatedHTML = currentHTML.replace(
+        new RegExp(original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
+        suggestion
+      );
+
+      // 에디터에 수정된 내용 적용
+      editor.commands.setContent(updatedHTML);
+
+      // 내용 상태도 업데이트
+      setContent(updatedHTML);
+
+      toast.success(`"${original}" → "${suggestion}" 수정 완료!`);
+    } catch (error) {
+      console.error('❌ 맞춤법 수정 적용 실패:', error);
+      toast.error('수정 적용에 실패했습니다.');
+    }
+  };
+
+  // 이미지 툴바 핸들러들
+  const handleImageDelete = () => {
+    if (!editor || !selectedImageNode) return;
+
+    try {
+      // 현재 선택된 이미지 노드 찾기
+      const { state } = editor;
+      const { selection } = state;
+
+      // 이미지 삭제
+      editor.chain().focus().deleteSelection().run();
+
+      setShowImageToolbar(false);
+      setSelectedImageNode(null);
+      toast.success('이미지가 삭제되었습니다.');
+    } catch (error) {
+      console.error('❌ 이미지 삭제 실패:', error);
+      toast.error('이미지 삭제에 실패했습니다.');
+    }
+  };
+
+  const handleImageAlign = (alignment: 'left' | 'center' | 'right') => {
+    if (!editor || !selectedImageNode) return;
+
+    try {
+      // 현재 선택된 이미지 노드의 위치 찾기
+      const { state } = editor;
+      const { selection } = state;
+
+      // 이미지를 감싸는 문단(p 태그)의 정렬 변경
+      editor.chain().focus().setTextAlign(alignment).run();
+
+      toast.success(`이미지가 ${alignment === 'left' ? '왼쪽' : alignment === 'center' ? '가운데' : '오른쪽'}으로 정렬되었습니다.`);
+    } catch (error) {
+      console.error('❌ 이미지 정렬 실패:', error);
+      toast.error('이미지 정렬에 실패했습니다.');
+    }
+  };
+
+  const handleImageResize = (width: number) => {
+    if (!editor || !selectedImageNode) return;
+
+    try {
+      const currentSrc = selectedImageNode.src;
+
+      // 에디터에서 이미지 크기 업데이트
+      editor.chain().focus().setImage({
+        src: currentSrc,
+        width: width
+      }).run();
+
+      // DOM에서도 즉시 반영
+      selectedImageNode.style.width = `${width}px`;
+      selectedImageNode.style.height = 'auto';
+
+    } catch (error) {
+      console.error('❌ 이미지 크기 조절 실패:', error);
+      toast.error('이미지 크기 조절에 실패했습니다.');
+    }
+  };
+
+  const handleImageEffect = (effect: 'shadow' | 'border' | 'rounded', enabled: boolean) => {
+    if (!editor || !selectedImageNode) return;
+
+    try {
+      const currentSrc = selectedImageNode.src;
+      const currentWidth = selectedImageNode.width || 400;
+
+      // 현재 클래스 목록 가져오기
+      let currentClasses = selectedImageNode.className || 'max-w-full h-auto cursor-pointer';
+
+      // 효과 클래스 추가/제거
+      const effectClass = `image-${effect}`;
+
+      if (enabled) {
+        if (!currentClasses.includes(effectClass)) {
+          currentClasses += ` ${effectClass}`;
+        }
+      } else {
+        currentClasses = currentClasses.replace(new RegExp(`\\s*${effectClass}\\s*`, 'g'), ' ');
+      }
+
+      // 에디터에서 이미지 속성 업데이트
+      editor.chain().focus().setImage({
+        src: currentSrc,
+        width: currentWidth,
+        class: currentClasses.trim()
+      }).run();
+
+      // DOM에서도 즉시 반영
+      selectedImageNode.className = currentClasses.trim();
+
+      const effectNames = { shadow: '그림자', border: '외곽선', rounded: '둥근 모서리' };
+      toast.success(`${effectNames[effect]}가 ${enabled ? '적용' : '제거'}되었습니다.`);
+    } catch (error) {
+      console.error('❌ 이미지 효과 적용 실패:', error);
+      toast.error('이미지 효과 적용에 실패했습니다.');
+    }
+  };
 
   // 블로그 선택 시 폰트 자동 변경
   useEffect(() => {
@@ -499,6 +754,32 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
           showAICompletion={showAICompletion}
         />
 
+        {/* 에디터 모드 탭 */}
+        <div className="border-b bg-gray-50 px-4">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setEditorMode('visual')}
+              className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                editorMode === 'visual'
+                  ? 'bg-white text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              비주얼
+            </button>
+            <button
+              onClick={() => setEditorMode('html')}
+              className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                editorMode === 'html'
+                  ? 'bg-white text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              HTML
+            </button>
+          </div>
+        </div>
+
         {/* AI 드롭다운 */}
         <AIDropdown
           showAIDropdown={showAIDropdown}
@@ -516,10 +797,27 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
           editor={editor}
         />
 
-        <EditorContent
-          editor={editor}
-          className="min-h-[600px] p-6 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500"
-        />
+        {/* 에디터 영역 */}
+        {editorMode === 'visual' ? (
+          <EditorContent
+            editor={editor}
+            className="min-h-[600px] p-6 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500"
+          />
+        ) : (
+          <div className="min-h-[600px] p-0">
+            <textarea
+              value={htmlContent}
+              onChange={(e) => handleHtmlChange(e.target.value)}
+              className="w-full h-[600px] p-4 font-mono text-sm border-none outline-none resize-none focus:ring-0"
+              placeholder="HTML 코드를 직접 편집하세요..."
+              style={{
+                fontFamily: 'Monaco, Menlo, "Ubuntu Mono", consolas, "source-code-pro", monospace',
+                lineHeight: '1.5',
+                tabSize: 2
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* 테이블 편집 패널 */}
@@ -530,6 +828,55 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
         onClose={() => setShowTableEditor(false)}
       />
 
+      {/* 이미지 편집 툴바 */}
+      <ImageToolbar
+        isVisible={showImageToolbar}
+        position={imageToolbarPosition}
+        onDelete={handleImageDelete}
+        onAlign={handleImageAlign}
+        onResize={handleImageResize}
+        onApplyEffect={handleImageEffect}
+        currentWidth={selectedImageNode?.width || 400}
+      />
+
+
+      {/* AI 요약 기능 */}
+      <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
+        <div className="flex items-center gap-3">
+          <h4 className="text-sm font-medium text-gray-700">📝 AI 요약</h4>
+          <button
+            onClick={handleGenerateSummary}
+            disabled={!content.trim() || isGeneratingSummary}
+            className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm rounded-lg hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
+          >
+            {isGeneratingSummary ? (
+              <>
+                <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                요약 중...
+              </>
+            ) : (
+              '요약하기'
+            )}
+          </button>
+          <button
+            onClick={() => setShowSpellCheck(true)}
+            disabled={!content.trim()}
+            className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm rounded-lg hover:from-blue-600 hover:to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
+          >
+            🔤 맞춤법
+          </button>
+          <div className="flex-1">
+            <input
+              type="text"
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              placeholder="본문 내용의 1-2줄 요약이 여기에 생성됩니다..."
+              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              readOnly={isGeneratingSummary}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* AI 도움말 */}
       <div className="mt-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-100">
@@ -539,6 +886,14 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
           </span>
         </div>
       </div>
+
+      {/* 맞춤법 검사 패널 */}
+      <SpellCheckPanel
+        isOpen={showSpellCheck}
+        onClose={() => setShowSpellCheck(false)}
+        content={content}
+        onApplyFix={handleApplySpellFix}
+      />
 
     </div>
   );

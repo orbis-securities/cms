@@ -117,6 +117,45 @@ body {
   @apply ring-2 ring-blue-500 ring-offset-2;
 }
 
+/* 이미지 기본 스타일 */
+.ProseMirror img {
+  @apply cursor-pointer;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0.5rem 0;
+}
+
+.ProseMirror img:hover {
+  @apply ring-1 ring-gray-300;
+}
+
+/* 이미지 정렬 스타일 */
+.ProseMirror .image-left {
+  text-align: left;
+}
+
+.ProseMirror .image-center {
+  text-align: center;
+}
+
+.ProseMirror .image-right {
+  text-align: right;
+}
+
+/* 이미지 효과 스타일 */
+.ProseMirror img.image-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.ProseMirror img.image-border {
+  border: 2px solid #e5e7eb;
+}
+
+.ProseMirror img.image-rounded {
+  border-radius: 0.5rem;
+}
+
 /* 테이블 스타일 향상 */
 .ProseMirror table {
   border-collapse: separate; /* collapse 대신 separate 사용 */

@@ -15,8 +15,10 @@ import {
   Type,
   Palette,
   Sparkles,
-  Smile
+  Smile,
+  Hash
 } from 'lucide-react';
+import CustomEmojiPicker from './EmojiPicker';
 // import ColorPalette from './ColorPalette';
 // import FontSelector from './FontSelector';
 
@@ -55,7 +57,8 @@ export default function EditorToolbar({
   const [currentSessionColors, setCurrentSessionColors] = useState<string[]>([]);
   const [recentBgColors, setRecentBgColors] = useState<string[]>([]);
   const [currentSessionBgColors, setCurrentSessionBgColors] = useState<string[]>([]);
-  const [showEmojiDropdown, setShowEmojiDropdown] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showSymbolDropdown, setShowSymbolDropdown] = useState(false);
 
   // 최근 색상 불러오기 (모달 열 때)
   useEffect(() => {
@@ -88,8 +91,13 @@ export default function EditorToolbar({
       }
 
       // 이모지 드롭다운 외부 클릭 시 닫기
-      if (showEmojiDropdown && !target.closest('.emoji-dropdown-container')) {
-        setShowEmojiDropdown(false);
+      if (showEmojiPicker && !target.closest('.emoji-dropdown-container')) {
+        setShowEmojiPicker(false);
+      }
+
+      // 기호 드롭다운 외부 클릭 시 닫기
+      if (showSymbolDropdown && !target.closest('.symbol-dropdown-container')) {
+        setShowSymbolDropdown(false);
       }
 
       // AI 드롭다운 외부 클릭 시 닫기
@@ -102,7 +110,7 @@ export default function EditorToolbar({
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showTextFormattingDropdown, onTextFormattingClick, showTableDropdown, showEmojiDropdown, showAICompletion, onAIButtonClick]);
+  }, [showTextFormattingDropdown, onTextFormattingClick, showTableDropdown, showEmojiPicker, showSymbolDropdown, showAICompletion, onAIButtonClick]);
 
   // 모달 닫힐 때 최근 색상 업데이트
   useEffect(() => {
@@ -439,50 +447,126 @@ export default function EditorToolbar({
       {/* 이모지 선택기 */}
       <div className="relative emoji-dropdown-container">
         <button
-          onClick={() => setShowEmojiDropdown(!showEmojiDropdown)}
+          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
           className="p-2 rounded hover:bg-gray-100 border border-gray-200"
           title="이모지 삽입"
         >
           <Smile className="w-4 h-4" />
         </button>
 
-        {showEmojiDropdown && (
-          <div className="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg p-4 z-20 w-72">
+        {/* 이모지 픽커 드롭다운 */}
+        {showEmojiPicker && (
+          <CustomEmojiPicker
+            isOpen={showEmojiPicker}
+            onClose={() => setShowEmojiPicker(false)}
+            onEmojiSelect={(emoji) => {
+              if (editor) {
+                editor.chain().focus().insertContent(emoji).run();
+              }
+            }}
+          />
+        )}
+      </div>
+
+      {/* 기호 선택기 */}
+      <div className="relative symbol-dropdown-container">
+        <button
+          onClick={() => setShowSymbolDropdown(!showSymbolDropdown)}
+          className="p-2 rounded hover:bg-gray-100 border border-gray-200"
+          title="특수문자/기호 삽입"
+        >
+          <Hash className="w-4 h-4" />
+        </button>
+
+        {/* 기호 드롭다운 */}
+        {showSymbolDropdown && (
+          <div className="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg p-4 z-20 w-80">
             <h4 className="font-semibold mb-3 flex items-center gap-2">
-              <Smile className="w-4 h-4 text-yellow-600" />
-              이모지 선택
+              <Hash className="w-4 h-4 text-blue-600" />
+              특수문자 & 기호
             </h4>
 
-            {/* 자주 사용하는 이모지들 */}
-            <div className="grid grid-cols-8 gap-2 mb-3">
-              {[
-                '😀', '😃', '😄', '😁', '😊', '😉', '😍', '🥰',
-                '😎', '🤔', '😅', '😂', '🤣', '😭', '😢', '😡',
-                '👍', '👎', '👌', '✌️', '🤞', '👏', '💪', '🙏',
-                '❤️', '💙', '💚', '💛', '💜', '🖤', '🤍', '🧡',
-                '🔥', '⭐', '✨', '💡', '💯', '🎉', '🎊', '🚀',
-                '📝', '📚', '💼', '🏆', '🎯', '⚡', '🌟', '💎'
-              ].map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() => {
-                    if (editor) {
-                      editor.chain().focus().insertContent(emoji).run();
-                      // 모달 자동 닫기 제거 - 연속 입력 가능
-                    }
-                  }}
-                  className="w-8 h-8 text-lg rounded hover:bg-gray-100 flex items-center justify-center transition-all hover:scale-110"
-                  title={`${emoji} 삽입`}
-                >
-                  {emoji}
-                </button>
-              ))}
+            {/* 자주 사용하는 기호들 */}
+            <div className="mb-4">
+              <div className="text-xs text-gray-400 mb-2">💼 자주 사용</div>
+              <div className="grid grid-cols-8 gap-2 mb-3">
+                {[
+                  '•', '◦', '▪', '▫', '■', '□', '●', '○',
+                  '★', '☆', '▲', '△', '▼', '▽', '◆', '◇',
+                  '→', '←', '↑', '↓', '↔', '↕', '⇒', '⇐',
+                  '✓', '✗', '✕', '±', '∞', '≈', '≠', '≤'
+                ].map((symbol, index) => (
+                  <button
+                    key={`frequent-${index}`}
+                    onClick={() => {
+                      if (editor) {
+                        editor.chain().focus().insertContent(symbol).run();
+                      }
+                    }}
+                    className="w-8 h-8 text-lg rounded hover:bg-gray-100 flex items-center justify-center transition-all hover:scale-110"
+                    title={`${symbol} 삽입`}
+                  >
+                    {symbol}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 수학/과학 기호 */}
+            <div className="mb-4 border-t pt-3">
+              <div className="text-xs text-gray-400 mb-2">🔬 수학/과학</div>
+              <div className="grid grid-cols-8 gap-2 mb-3">
+                {[
+                  '×', '÷', '+', '−', '=', '≥', '≤', '%',
+                  '‰', '°', '′', '″', '∴', '∵', '∝', '∈',
+                  '∉', '∑', '∏', '∫', '∂', '∇', 'α', 'β',
+                  'γ', 'δ', 'π', 'λ', 'μ', 'σ', 'φ', 'ω'
+                ].map((symbol, index) => (
+                  <button
+                    key={`math-${index}`}
+                    onClick={() => {
+                      if (editor) {
+                        editor.chain().focus().insertContent(symbol).run();
+                      }
+                    }}
+                    className="w-8 h-8 text-lg rounded hover:bg-gray-100 flex items-center justify-center transition-all hover:scale-110"
+                    title={`${symbol} 삽입`}
+                  >
+                    {symbol}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 통화/기타 */}
+            <div className="border-t pt-3">
+              <div className="text-xs text-gray-400 mb-2">💰 통화/기타</div>
+              <div className="grid grid-cols-8 gap-2 mb-3">
+                {[
+                  '$', '€', '£', '¥', '₩', '¢', '©', '®',
+                  '™', '§', '¶', '†', '‡', '‰', '‱', '¿',
+                  '¡', '«', '»', '@', '#', '%', '&', '…'
+                ].map((symbol, index) => (
+                  <button
+                    key={`symbol-${index}-${symbol}`}
+                    onClick={() => {
+                      if (editor) {
+                        editor.chain().focus().insertContent(symbol).run();
+                      }
+                    }}
+                    className="w-8 h-8 text-lg rounded hover:bg-gray-100 flex items-center justify-center transition-all hover:scale-110"
+                    title={`${symbol} 삽입`}
+                  >
+                    {symbol}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* 빠른 닫기 버튼 */}
-            <div className="text-center">
+            <div className="text-center mt-3 pt-3 border-t">
               <button
-                onClick={() => setShowEmojiDropdown(false)}
+                onClick={() => setShowSymbolDropdown(false)}
                 className="px-3 py-1 text-xs border rounded hover:bg-gray-50"
               >
                 닫기
