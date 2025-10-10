@@ -37,6 +37,7 @@ import AIDropdown from './AIDropdown';
 import SpellCheckPanel from './SpellCheckPanel';
 import ImageToolbar from './ImageToolbar';
 import BlockquoteToolbar from './BlockquoteToolbar';
+import EmojiRecommendation from './EmojiRecommendation';
 
 // 코드 하이라이팅 설정
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -641,6 +642,19 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
     }
   };
 
+  // 이모지 삽입 함수
+  const handleInsertEmoji = (emoji: string) => {
+    if (!editor) return;
+
+    try {
+      editor.chain().focus().insertContent(emoji).run();
+      toast.success(`이모지 ${emoji} 삽입 완료!`);
+    } catch (error) {
+      console.error('❌ 이모지 삽입 실패:', error);
+      toast.error('이모지 삽입에 실패했습니다.');
+    }
+  };
+
   // 이미지 툴바 핸들러들
   const handleImageDelete = () => {
     if (!editor || !selectedImageNode) return;
@@ -947,6 +961,12 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
           </span>
         </div>
       </div>
+
+      {/* 이모지 추천 */}
+      <EmojiRecommendation
+        content={content}
+        onInsertEmoji={handleInsertEmoji}
+      />
 
       {/* 맞춤법 검사 패널 */}
       <SpellCheckPanel
