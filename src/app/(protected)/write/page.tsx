@@ -48,6 +48,8 @@ function WritePageContent() {
   const [keywords, setKeywords] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentPostId, setCurrentPostId] = useState(editPostId || '');
+  const [showPublishedPreview, setShowPublishedPreview] = useState(false);
+  const [publishedPostUrl, setPublishedPostUrl] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<AdvancedNovelEditorRef>(null);
 
@@ -164,15 +166,15 @@ function WritePageContent() {
 
   const handleSaveAsDraft = async () => {
     if (!postTitle.trim()) {
-      toast.error('제목을 입력해주세요');
+      toast.error('제목을 입력해주세요', { position: 'top-center' });
       return;
     }
     if (!selectedBlog.trim()) {
-      toast.error('블로그를 선택해주세요');
+      toast.error('블로그를 선택해주세요', { position: 'top-center' });
       return;
     }
     if (!category.trim()) {
-      toast.error('카테고리를 선택해주세요');
+      toast.error('카테고리를 선택해주세요', { position: 'top-center' });
       return;
     }
 
@@ -235,19 +237,23 @@ function WritePageContent() {
 
   const handlePublish = async () => {
     if (!postTitle.trim()) {
-      toast.error('제목을 입력해주세요');
+      toast.error('제목을 입력해주세요', { position: 'top-center' });
       return;
     }
-    if (!postContent.trim()) {
-      toast.error('내용을 입력해주세요');
+
+    // 에디터에서 최신 내용 가져오기
+    const editorContent = editorRef.current?.getHTML?.() || postContent;
+
+    if (!editorContent.trim() || editorContent === '<p></p>') {
+      toast.error('내용을 입력해주세요', { position: 'top-center' });
       return;
     }
     if (!selectedBlog.trim()) {
-      toast.error('블로그를 선택해주세요');
+      toast.error('블로그를 선택해주세요', { position: 'top-center' });
       return;
     }
     if (!category.trim()) {
-      toast.error('카테고리를 선택해주세요');
+      toast.error('카테고리를 선택해주세요', { position: 'top-center' });
       return;
     }
 
@@ -259,7 +265,7 @@ function WritePageContent() {
 
         await updatePostInFirestore(selectedBlog, currentPostId, {
           title: postTitle,
-          content: postContent,
+          content: editorContent,
           categories: [category],
           tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
           status: 'published',
@@ -271,6 +277,13 @@ function WritePageContent() {
           }
         });
 
+        // axi 블로그일 때만 미리보기 표시
+        if (selectedBlog === 'axi') {
+          const previewUrl = 'https://mmtblog.vercel.app/posts/1';
+          setPublishedPostUrl(previewUrl);
+          setShowPublishedPreview(true);
+        }
+
         toast.success('포스트가 수정 발행되었습니다! 🎉');
       } else {
         // 새 글 모드: 생성
@@ -278,7 +291,7 @@ function WritePageContent() {
 
         const postId = await savePostToFirestore(
           postTitle,
-          postContent,
+          editorContent,
           selectedBlog,
           {
             category,
@@ -293,6 +306,14 @@ function WritePageContent() {
         console.log('✅ 포스트 발행 완료:', postId);
         setCurrentPostId(postId); // 저장 후 수정 모드로 전환
         setOriginalCategory(category);
+
+        // axi 블로그일 때만 미리보기 표시
+        if (selectedBlog === 'axi') {
+          const previewUrl = 'https://mmtblog.vercel.app/posts/1';
+          setPublishedPostUrl(previewUrl);
+          setShowPublishedPreview(true);
+        }
+
         toast.success(`포스트가 발행되었습니다! 🎉\nPost ID: ${postId}`);
       }
     } catch (error) {
@@ -307,22 +328,20 @@ function WritePageContent() {
     setIsImageUploading(true);
     try {
       console.log('📁 사이드바 이미지 업로드 시작:', file.name, file.type, file.size);
-      
+
       // 이미지 파일 유효성 검사
       if (!file.type.startsWith('image/')) {
         throw new Error('이미지 파일만 업로드 가능합니다.');
       }
-      
+
       const compressedFile = await compressImage(file, 1200, 0.8);
       console.log('🗜️ 이미지 압축 완료:', compressedFile.size);
-      
+
       const url = await uploadImageToStorage(compressedFile, 'demo-blog');
       console.log('✅ Firebase 업로드 완료:', url);
-      
+
       // 업로드된 이미지를 목록에 추가
       setUploadedImages(prev => [...prev, { url, name: file.name }]);
-      
-      toast.success(`이미지 업로드 완료: ${file.name}`);
       return url;
     } catch (error) {
       console.error('❌ 사이드바 이미지 업로드 에러:', error);
@@ -381,13 +400,13 @@ function WritePageContent() {
     e.stopPropagation();
     console.log('📥 드롭 이벤트 발생');
     setDragActive(false);
-    
+
     const files = Array.from(e.dataTransfer.files);
     const items = Array.from(e.dataTransfer.items);
-    
+
     console.log('📁 드롭된 파일들:', files.map(f => f.name));
     console.log('🔗 드롭된 아이템들:', items.map(i => i.type));
-    
+
     // 파일이 있는 경우 (실제 파일 드롭)
     if (files.length > 0) {
       const file = files[0];
@@ -493,7 +512,16 @@ function WritePageContent() {
             */}
             <button
               className="px-3 py-1 border rounded text-sm"
-              onClick={() => setIsPreview(!isPreview)}
+              onClick={() => {
+                if (!isPreview) {
+                  // 미리보기로 전환하기 전에 에디터 내용 저장
+                  const editorContent = editorRef.current?.getHTML?.();
+                  if (editorContent) {
+                    setPostContent(editorContent);
+                  }
+                }
+                setIsPreview(!isPreview);
+              }}
             >
               <Eye className="w-4 h-4 inline mr-1" />
               {isPreview ? '편집' : '미리보기'}
@@ -803,6 +831,60 @@ function WritePageContent() {
           </div>
         </div>
       </div>
+
+      {/* 발행된 포스트 미리보기 모달 */}
+      {showPublishedPreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-6xl h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold">발행 포스트 확인</h3>
+              <div className="flex items-center gap-2">
+                <a
+                  href={publishedPostUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                >
+                  axi 페이지
+                </a>
+                <Link
+                  href={`/manage/${currentPostId}?blog=${selectedBlog}&category=${category}`}
+                  className="px-3 py-1.5 text-sm text-green-600 hover:text-green-700 border border-green-600 rounded-lg hover:bg-green-50 transition-colors"
+                >
+                  관리자 페이지
+                </Link>
+                <button
+                  onClick={() => {
+                    setShowPublishedPreview(false);
+                    // 에디터 내용 새로고침
+                    setPostTitle('');
+                    setPostContent('');
+                    setTags('');
+                    setMetaTitle('');
+                    setMetaDescription('');
+                    setKeywords('');
+                    setCurrentPostId('');
+                    // 에디터 강제 리렌더링을 위한 방법
+                    if (editorRef.current) {
+                      editorRef.current.chain?.()?.clearContent()?.run?.();
+                    }
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <iframe
+                src={publishedPostUrl}
+                className="w-full h-full border-0"
+                title="발행 포스트 확인"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 기능 소개 섹션 - AI 관련 내용 수정 */}
       <div className="bg-white border-t border-gray-200 mt-12">

@@ -344,14 +344,17 @@ export default function ManagePosts() {
                   {posts.map((post) => (
                     <tr key={post.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
-                        <div>
+                        <Link
+                          href={`/manage/${post.id}?blog=${selectedBlog}&category=${post.categories[0]}`}
+                          className="block hover:text-blue-600 transition-colors"
+                        >
                           <div className="font-medium text-gray-900 truncate max-w-xs">
                             {post.title}
                           </div>
                           <div className="text-sm text-gray-500 truncate max-w-xs">
                             {post.excerpt || '내용 없음'}
                           </div>
-                        </div>
+                        </Link>
                       </td>
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
@@ -367,18 +370,19 @@ export default function ManagePosts() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <Link
+                            href={`/manage/${post.id}?blog=${selectedBlog}&category=${post.categories[0]}`}
+                            className="text-gray-600 hover:text-gray-800"
+                            title="상세보기"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+                          <Link
                             href={`/write?id=${post.id}&category=${post.categories[0]}&blog=${selectedBlog}`}
                             className="text-blue-600 hover:text-blue-800"
                             title="수정"
                           >
                             <Edit className="w-4 h-4" />
                           </Link>
-                          <button
-                            className="text-gray-600 hover:text-gray-800"
-                            title="미리보기"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
                           <button
                             onClick={() => handleDeletePost(post)}
                             className="text-red-600 hover:text-red-800"

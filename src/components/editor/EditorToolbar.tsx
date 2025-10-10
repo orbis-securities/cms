@@ -16,7 +16,12 @@ import {
   Palette,
   Sparkles,
   Smile,
-  Hash
+  Hash,
+  Quote,
+  Minus,
+  AlignLeft,
+  AlignCenter,
+  AlignRight
 } from 'lucide-react';
 import CustomEmojiPicker from './EmojiPicker';
 // import ColorPalette from './ColorPalette';
@@ -59,6 +64,8 @@ export default function EditorToolbar({
   const [currentSessionBgColors, setCurrentSessionBgColors] = useState<string[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showSymbolDropdown, setShowSymbolDropdown] = useState(false);
+  const [showQuoteStyleDropdown, setShowQuoteStyleDropdown] = useState(false);
+  const [showDividerDropdown, setShowDividerDropdown] = useState(false);
 
   // 최근 색상 불러오기 (모달 열 때)
   useEffect(() => {
@@ -100,6 +107,16 @@ export default function EditorToolbar({
         setShowSymbolDropdown(false);
       }
 
+      // 인용구 스타일 드롭다운 외부 클릭 시 닫기
+      if (showQuoteStyleDropdown && !target.closest('.quote-style-dropdown-container')) {
+        setShowQuoteStyleDropdown(false);
+      }
+
+      // 구분선 드롭다운 외부 클릭 시 닫기
+      if (showDividerDropdown && !target.closest('.divider-dropdown-container')) {
+        setShowDividerDropdown(false);
+      }
+
       // AI 드롭다운 외부 클릭 시 닫기
       // showAICompletion 대신 실제 AI 드롭다운 표시 상태를 확인해야 함
       // 일단 주석 처리 - AdvancedNovelEditor에서 처리하도록 함
@@ -110,7 +127,7 @@ export default function EditorToolbar({
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showTextFormattingDropdown, onTextFormattingClick, showTableDropdown, showEmojiPicker, showSymbolDropdown, showAICompletion, onAIButtonClick]);
+  }, [showTextFormattingDropdown, onTextFormattingClick, showTableDropdown, showEmojiPicker, showSymbolDropdown, showQuoteStyleDropdown, showDividerDropdown, showAICompletion, onAIButtonClick]);
 
   // 모달 닫힐 때 최근 색상 업데이트
   useEffect(() => {
@@ -583,9 +600,196 @@ export default function EditorToolbar({
         className={`p-2 rounded hover:bg-gray-100 ${
           editor?.isActive('bulletList') ? 'bg-blue-100 text-blue-600' : ''
         }`}
+        title="글머리 기호 목록"
       >
         <List className="w-4 h-4" />
       </button>
+
+      {/* 인용구 스타일 선택기 */}
+      <div className="relative quote-style-dropdown-container">
+        <button
+          onClick={() => setShowQuoteStyleDropdown(!showQuoteStyleDropdown)}
+          className={`p-2 rounded hover:bg-gray-100 ${
+            editor?.isActive('blockquote') ? 'bg-blue-100 text-blue-600' : ''
+          }`}
+          title="인용구 스타일"
+        >
+          <Quote className="w-4 h-4" />
+        </button>
+
+        {/* 인용구 스타일 드롭다운 */}
+        {showQuoteStyleDropdown && (
+          <div className="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg py-1 z-20 w-48">
+            <button
+              onClick={() => {
+                if (editor) {
+                  if (!editor.isActive('blockquote')) {
+                    editor.chain().focus().toggleBlockquote().run();
+                  }
+                  setTimeout(() => {
+                    editor.chain().focus().updateAttributes('blockquote', { class: 'quote-style-1' }).run();
+                  }, 10);
+                }
+                setShowQuoteStyleDropdown(false);
+              }}
+              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors"
+            >
+              따옴표
+            </button>
+            <button
+              onClick={() => {
+                if (editor) {
+                  if (!editor.isActive('blockquote')) {
+                    editor.chain().focus().toggleBlockquote().run();
+                  }
+                  setTimeout(() => {
+                    editor.chain().focus().updateAttributes('blockquote', { class: 'quote-style-2' }).run();
+                  }, 10);
+                }
+                setShowQuoteStyleDropdown(false);
+              }}
+              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors"
+            >
+              버티컬라인
+            </button>
+            <button
+              onClick={() => {
+                if (editor) {
+                  if (!editor.isActive('blockquote')) {
+                    editor.chain().focus().toggleBlockquote().run();
+                  }
+                  setTimeout(() => {
+                    editor.chain().focus().updateAttributes('blockquote', { class: 'quote-style-3' }).run();
+                  }, 10);
+                }
+                setShowQuoteStyleDropdown(false);
+              }}
+              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors"
+            >
+              말풍선
+            </button>
+            <button
+              onClick={() => {
+                if (editor) {
+                  if (!editor.isActive('blockquote')) {
+                    editor.chain().focus().toggleBlockquote().run();
+                  }
+                  setTimeout(() => {
+                    editor.chain().focus().updateAttributes('blockquote', { class: 'quote-style-4' }).run();
+                  }, 10);
+                }
+                setShowQuoteStyleDropdown(false);
+              }}
+              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors"
+            >
+              라인&따옴표
+            </button>
+            <button
+              onClick={() => {
+                if (editor) {
+                  if (!editor.isActive('blockquote')) {
+                    editor.chain().focus().toggleBlockquote().run();
+                  }
+                  setTimeout(() => {
+                    editor.chain().focus().updateAttributes('blockquote', { class: 'quote-style-6' }).run();
+                  }, 10);
+                }
+                setShowQuoteStyleDropdown(false);
+              }}
+              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors"
+            >
+              프레임
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* 구분선 선택기 */}
+      <div className="relative divider-dropdown-container">
+        <button
+          onClick={() => setShowDividerDropdown(!showDividerDropdown)}
+          className="p-2 rounded hover:bg-gray-100"
+          title="구분선 삽입"
+        >
+          <Minus className="w-4 h-4" />
+        </button>
+
+        {/* 구분선 드롭다운 */}
+        {showDividerDropdown && (
+          <div className="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg py-1 z-20 w-48">
+            <button
+              onClick={() => {
+                if (editor) {
+                  editor.chain()
+                    .focus()
+                    .setHorizontalRule({ class: 'divider-short' })
+                    .run();
+                }
+                setShowDividerDropdown(false);
+              }}
+              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors"
+            >
+              짧은 기본선
+            </button>
+            <button
+              onClick={() => {
+                if (editor) {
+                  editor.chain()
+                    .focus()
+                    .setHorizontalRule({ class: 'divider-long' })
+                    .run();
+                }
+                setShowDividerDropdown(false);
+              }}
+              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors"
+            >
+              긴 기본선
+            </button>
+            <button
+              onClick={() => {
+                if (editor) {
+                  editor.chain()
+                    .focus()
+                    .setHorizontalRule({ class: 'divider-thick' })
+                    .run();
+                }
+                setShowDividerDropdown(false);
+              }}
+              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors"
+            >
+              짧은 두꺼운선
+            </button>
+            <button
+              onClick={() => {
+                if (editor) {
+                  editor.chain()
+                    .focus()
+                    .setHorizontalRule({ class: 'divider-dashed' })
+                    .run();
+                }
+                setShowDividerDropdown(false);
+              }}
+              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors"
+            >
+              점선
+            </button>
+            <button
+              onClick={() => {
+                if (editor) {
+                  editor.chain()
+                    .focus()
+                    .setHorizontalRule({ class: 'divider-vertical' })
+                    .run();
+                }
+                setShowDividerDropdown(false);
+              }}
+              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors"
+            >
+              세로 선
+            </button>
+          </div>
+        )}
+      </div>
       <div className="w-px h-6 bg-gray-300 mx-1" />
 
       {/* 링크 */}
@@ -688,25 +892,30 @@ export default function EditorToolbar({
       {/* 이미지 업로드 */}
       <button
         onClick={() => {
-          console.log('🖱️ 이미지 업로드 버튼 클릭됨');
           const input = document.createElement('input');
           input.type = 'file';
           input.accept = 'image/*';
-          input.onchange = (e) => {
-            const file = (e.target as HTMLInputElement).files?.[0];
-            console.log('📂 파일 선택됨:', file?.name, file?.type);
-            if (file) {
-              onImageUpload(file).then((url) => {
-                console.log('🖼️ 에디터에 이미지 삽입:', url);
-                editor?.chain().focus().setImage({ src: url }).run();
-              }).catch(error => {
-                console.error('💥 이미지 처리 실패:', error);
-              });
+          input.multiple = true; // 다중 선택 활성화
+          input.onchange = async (e) => {
+            const files = (e.target as HTMLInputElement).files;
+            if (files && files.length > 0) {
+              // 모든 파일을 순차적으로 업로드
+              for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                try {
+                  const url = await onImageUpload(file);
+                  // 각 이미지를 HTML로 삽입하여 덮어쓰기 방지
+                  editor?.chain().focus().insertContent(`<img src="${url}" style="display: inline-block; max-width: 100%; height: auto;" /><p></p>`).run();
+                } catch (error) {
+                  console.error(`이미지 업로드 실패: ${file.name}`, error);
+                }
+              }
             }
           };
           input.click();
         }}
         className="p-2 rounded hover:bg-gray-100"
+        title="이미지 업로드 (다중 선택 가능)"
       >
         <ImageIcon className="w-4 h-4" />
       </button>

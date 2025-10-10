@@ -3,6 +3,9 @@
 /* Highlight.js 스타일 */
 @import 'highlight.js/styles/github.css';
 
+/* Tippy.js 스타일 */
+@import 'tippy.js/dist/tippy.css';
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -62,7 +65,144 @@ body {
 }
 
 .prose blockquote {
-  @apply border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-4;
+  margin: 16px 0;
+  position: relative;
+  color: #374151;
+  min-width: 30%;
+  max-width: 100%;
+  width: fit-content;
+  text-align: center;
+}
+
+.prose blockquote p {
+  margin: 0;
+  text-align: center;
+}
+
+/* 인용구 정렬 - prose */
+.prose blockquote[data-align="left"] {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.prose blockquote[data-align="center"] {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.prose blockquote[data-align="right"] {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* 스타일 1: 텍스트 위 아래로 배치된 따옴표 - prose */
+.prose blockquote.quote-style-1 {
+  padding: 24px 16px;
+}
+
+.prose blockquote.quote-style-1:before {
+  content: '"';
+  font-size: 36px;
+  color: #9ca3af;
+  position: absolute;
+  top: -8px;
+  left: 8px;
+  line-height: 1;
+}
+
+.prose blockquote.quote-style-1:after {
+  content: '"';
+  font-size: 36px;
+  color: #9ca3af;
+  position: absolute;
+  bottom: -8px;
+  right: 8px;
+  line-height: 1;
+}
+
+/* 스타일 2: 텍스트 왼쪽에 있는 세로 라인 - prose */
+.prose blockquote.quote-style-2 {
+  border-left: 4px solid #6b7280;
+  padding: 8px 16px;
+}
+
+/* 스타일 3: 텍스트 감싸는 직각형태의 말풍선 - prose */
+.prose blockquote.quote-style-3 {
+  border: 2px solid #d1d5db;
+  border-radius: 0;
+  padding: 12px 16px;
+  background: transparent;
+  position: relative;
+  margin-bottom: 25px;
+}
+
+.prose blockquote.quote-style-3:after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 30px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #d1d5db;
+}
+
+.prose blockquote.quote-style-3:before {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 31px;
+  width: 0;
+  height: 0;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top: 9px solid white;
+  z-index: 1;
+}
+
+/* 스타일 4: 텍스트 왼쪽 위에 따옴표 한개, 텍스트 아래에 가로 라인 - prose */
+.prose blockquote.quote-style-4 {
+  padding: 16px 16px 12px 16px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.prose blockquote.quote-style-4:before {
+  content: '"';
+  font-size: 32px;
+  color: #9ca3af;
+  position: absolute;
+  top: 0;
+  left: 0;
+  line-height: 1;
+}
+
+/* 스타일 6: 텍스트 감싸는 왼쪽 위, 오른쪽 아래 프레임 형태 - prose */
+.prose blockquote.quote-style-6 {
+  padding: 16px;
+  position: relative;
+}
+
+.prose blockquote.quote-style-6:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30px;
+  height: 30px;
+  border-top: 3px solid #6b7280;
+  border-left: 3px solid #6b7280;
+}
+
+.prose blockquote.quote-style-6:after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 30px;
+  height: 30px;
+  border-bottom: 3px solid #6b7280;
+  border-right: 3px solid #6b7280;
 }
 
 .prose code {
@@ -75,6 +215,23 @@ body {
 
 .prose img {
   @apply rounded-lg shadow-sm;
+  display: inline-block;
+  margin: 0.5rem;
+  max-width: 100%;
+  height: auto;
+}
+
+/* 이미지 float 정렬로 텍스트와 나란히 배치 */
+.prose img[style*="float: left"] {
+  float: left;
+  margin-right: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose img[style*="float: right"] {
+  float: right;
+  margin-left: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .prose a {
@@ -122,24 +279,47 @@ body {
   @apply cursor-pointer;
   max-width: 100%;
   height: auto;
-  display: block;
-  margin: 0.5rem 0;
+  display: inline-block;
+  margin: 0.5rem;
 }
 
 .ProseMirror img:hover {
   @apply ring-1 ring-gray-300;
 }
 
+/* 이미지 float 정렬로 텍스트와 나란히 배치 */
+.ProseMirror img[style*="float: left"],
+.ProseMirror img.image-float-left {
+  float: left;
+  margin-right: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror img[style*="float: right"],
+.ProseMirror img.image-float-right {
+  float: right;
+  margin-left: 1rem;
+  margin-bottom: 0.5rem;
+}
+
 /* 이미지 정렬 스타일 */
-.ProseMirror .image-left {
+.ProseMirror .image-resizer-container {
+  display: block;
+  max-width: 100%;
+}
+
+.ProseMirror .image-resizer-container.image-align-left,
+.ProseMirror .image-resizer-container[data-align="left"] {
   text-align: left;
 }
 
-.ProseMirror .image-center {
+.ProseMirror .image-resizer-container.image-align-center,
+.ProseMirror .image-resizer-container[data-align="center"] {
   text-align: center;
 }
 
-.ProseMirror .image-right {
+.ProseMirror .image-resizer-container.image-align-right,
+.ProseMirror .image-resizer-container[data-align="right"] {
   text-align: right;
 }
 
@@ -226,4 +406,271 @@ body {
 /* 하이라이트 스타일 */
 .ProseMirror mark {
   @apply bg-yellow-200 px-1 rounded;
+}
+
+/* 인용구 기본 스타일 */
+.ProseMirror blockquote {
+  margin: 16px 0;
+  position: relative;
+  color: #374151;
+  min-width: 30%;
+  max-width: 100%;
+  width: fit-content;
+  text-align: center;
+}
+
+.ProseMirror blockquote p {
+  margin: 0;
+  text-align: center;
+}
+
+/* 인용구 정렬 */
+.ProseMirror blockquote[data-align="left"] {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.ProseMirror blockquote[data-align="center"] {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ProseMirror blockquote[data-align="right"] {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* 스타일 1: 텍스트 위 아래로 배치된 따옴표 */
+.ProseMirror blockquote,
+.ProseMirror blockquote.quote-style-1 {
+  padding: 24px 16px;
+}
+
+.ProseMirror blockquote.quote-style-1:before {
+  content: '"';
+  font-size: 36px;
+  color: #9ca3af;
+  position: absolute;
+  top: -8px;
+  left: 8px;
+  line-height: 1;
+}
+
+.ProseMirror blockquote.quote-style-1:after {
+  content: '"';
+  font-size: 36px;
+  color: #9ca3af;
+  position: absolute;
+  bottom: -8px;
+  right: 8px;
+  line-height: 1;
+}
+
+/* 스타일 2: 텍스트 왼쪽에 있는 세로 라인 */
+.ProseMirror blockquote.quote-style-2 {
+  border-left: 4px solid #6b7280;
+  padding: 8px 16px;
+}
+
+/* 스타일 3: 텍스트 감싸는 직각형태의 말풍선 */
+.ProseMirror blockquote.quote-style-3 {
+  border: 2px solid #d1d5db;
+  border-radius: 0;
+  padding: 12px 16px;
+  background: transparent;
+  position: relative;
+  margin-bottom: 25px;
+}
+
+.ProseMirror blockquote.quote-style-3:after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 30px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #d1d5db;
+}
+
+.ProseMirror blockquote.quote-style-3:before {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 31px;
+  width: 0;
+  height: 0;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top: 9px solid white;
+  z-index: 1;
+}
+
+/* 스타일 4: 텍스트 왼쪽 위에 따옴표 한개, 텍스트 아래에 가로 라인 */
+.ProseMirror blockquote.quote-style-4 {
+  padding: 16px 16px 12px 16px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.ProseMirror blockquote.quote-style-4:before {
+  content: '"';
+  font-size: 32px;
+  color: #9ca3af;
+  position: absolute;
+  top: 0;
+  left: 0;
+  line-height: 1;
+}
+
+/* 구분선 스타일 */
+.ProseMirror hr,
+.prose hr {
+  border: none;
+  margin: 20px auto;
+  display: block;
+  position: relative;
+  cursor: pointer;
+}
+
+/* 구분선 hover 효과 */
+.ProseMirror hr:hover,
+.prose hr:hover {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* 구분선 정렬 */
+.ProseMirror hr[data-align="left"],
+.prose hr[data-align="left"] {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.ProseMirror hr[data-align="center"],
+.prose hr[data-align="center"] {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ProseMirror hr[data-align="right"],
+.prose hr[data-align="right"] {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* 1. 짧은 기본선 */
+.ProseMirror hr.divider-short,
+.prose hr.divider-short {
+  width: 20%;
+  height: 1px;
+  background-color: #d1d5db;
+}
+
+/* 2. 긴 기본선 */
+.ProseMirror hr.divider-long,
+.prose hr.divider-long {
+  width: 50%;
+  height: 1px;
+  background-color: #d1d5db;
+}
+
+/* 3. 짧은 두꺼운선 */
+.ProseMirror hr.divider-thick,
+.prose hr.divider-thick {
+  width: 20%;
+  height: 3px;
+  background-color: #6b7280;
+}
+
+/* 4. 끊겨있는 선 */
+.ProseMirror hr.divider-dashed,
+.prose hr.divider-dashed {
+  width: 50%;
+  height: 0;
+  border-top: 2px dashed #d1d5db;
+}
+
+/* 5. 세로 선 */
+.ProseMirror hr.divider-vertical,
+.prose hr.divider-vertical {
+  width: 1px;
+  height: 60px;
+  background-color: #d1d5db;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+/* 세로선 정렬 */
+.ProseMirror hr.divider-vertical[data-align="left"],
+.prose hr.divider-vertical[data-align="left"] {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.ProseMirror hr.divider-vertical[data-align="center"],
+.prose hr.divider-vertical[data-align="center"] {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ProseMirror hr.divider-vertical[data-align="right"],
+.prose hr.divider-vertical[data-align="right"] {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* 스타일 6: 텍스트 감싸는 왼쪽 위, 오른쪽 아래 프레임 형태 */
+.ProseMirror blockquote.quote-style-6 {
+  padding: 16px;
+  position: relative;
+}
+
+.ProseMirror blockquote.quote-style-6:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30px;
+  height: 30px;
+  border-top: 3px solid #6b7280;
+  border-left: 3px solid #6b7280;
+}
+
+.ProseMirror blockquote.quote-style-6:after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 30px;
+  height: 30px;
+  border-bottom: 3px solid #6b7280;
+  border-right: 3px solid #6b7280;
+}
+
+/* 슬래시 커맨드 메뉴 스타일 */
+.slash-commands-menu {
+  min-width: 280px;
+  max-width: 320px;
+}
+
+.slash-commands-menu button {
+  transition: all 0.15s ease-in-out;
+}
+
+.slash-commands-menu button:hover:not(:disabled) {
+  transform: translateX(2px);
+}
+
+/* Tippy tooltip 커스텀 스타일 */
+.tippy-box[data-theme~='light'] {
+  background-color: white;
+  color: #374151;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+}
+
+.tippy-box[data-theme~='light'] .tippy-content {
+  padding: 0;
 }

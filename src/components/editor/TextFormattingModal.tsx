@@ -70,7 +70,6 @@ export default function TextFormattingModal({ editor, isVisible, onClose }: Text
     // 윈도우 스타일 텍스트 포매팅
     if (hasSelection) {
       // 드래그 선택된 텍스트만 변경
-      console.log('🎯 선택된 텍스트에만 스타일 적용');
 
       editor.chain().focus()
         .setColor(selectedColor)
@@ -88,7 +87,6 @@ export default function TextFormattingModal({ editor, isVisible, onClose }: Text
       toast.success('선택된 텍스트 스타일이 적용되었습니다!');
     } else {
       // 앞으로 입력할 텍스트의 기본 스타일 변경
-      console.log('🎯 앞으로 입력할 텍스트 기본 스타일 설정');
 
       // 현재 커서 위치에서 스타일 설정
       const chain = editor.chain().focus();

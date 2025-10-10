@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, Trash2, Edit3, Square, Circle } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, Trash2, Edit3 } from 'lucide-react';
 
 interface ImageToolbarProps {
   isVisible: boolean;
@@ -9,7 +9,6 @@ interface ImageToolbarProps {
   onDelete: () => void;
   onAlign: (alignment: 'left' | 'center' | 'right') => void;
   onResize: (width: number) => void;
-  onApplyEffect: (effect: 'shadow' | 'border' | 'rounded', enabled: boolean) => void;
   currentWidth?: number;
   currentAlignment?: 'left' | 'center' | 'right';
 }
@@ -20,7 +19,6 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
   onDelete,
   onAlign,
   onResize,
-  onApplyEffect,
   currentWidth = 400,
   currentAlignment = 'left'
 }) => {
@@ -138,34 +136,6 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           >
             <AlignRight className="w-3 h-3" />
             오른쪽
-          </button>
-        </div>
-      </div>
-
-      {/* 이미지 효과 */}
-      <div className="mb-4">
-        <label className="text-sm font-medium text-gray-700 mb-3 block">🎨 효과</label>
-        <div className="space-y-2">
-          <button
-            onClick={() => onApplyEffect('shadow', true)}
-            className="w-full p-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-          >
-            <Square className="w-4 h-4" />
-            그림자 추가
-          </button>
-          <button
-            onClick={() => onApplyEffect('border', true)}
-            className="w-full p-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-          >
-            <Square className="w-4 h-4" />
-            외곽선 추가
-          </button>
-          <button
-            onClick={() => onApplyEffect('rounded', true)}
-            className="w-full p-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-          >
-            <Circle className="w-4 h-4" />
-            둥근 모서리
           </button>
         </div>
       </div>

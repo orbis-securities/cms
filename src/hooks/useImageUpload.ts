@@ -16,8 +16,6 @@ export function useImageUpload(blogId: string) {
 
       const url = await uploadImageToStorage(compressedFile, blogId);
       console.log('✅ Firebase 업로드 완료:', url);
-
-      toast.success(`이미지 업로드 완료: ${file.name}`);
       return url;
     } catch (error) {
       console.error('❌ 이미지 업로드 에러:', error);

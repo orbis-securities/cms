@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import Typography from '@tiptap/extension-typography';
@@ -21,6 +20,11 @@ import { createLowlight } from 'lowlight';
 import { Dropcursor } from '@tiptap/extension-dropcursor';
 import { Gapcursor } from '@tiptap/extension-gapcursor';
 import TextAlign from '@tiptap/extension-text-align';
+import { ResizableImage } from './extensions/ResizableImage';
+import { CustomBlockquote } from './extensions/CustomBlockquote';
+import { CustomHorizontalRule } from './extensions/CustomHorizontalRule';
+import { DividerToolbarPortal } from './DividerToolbarPortal';
+import { SlashCommand, getSuggestionItems, renderItems } from './extensions/SlashCommand';
 
 import { toast } from 'sonner';
 import { useImageUpload } from '@/hooks/useImageUpload';
@@ -32,6 +36,7 @@ import EditorStatusBar from './EditorStatusBar';
 import AIDropdown from './AIDropdown';
 import SpellCheckPanel from './SpellCheckPanel';
 import ImageToolbar from './ImageToolbar';
+import BlockquoteToolbar from './BlockquoteToolbar';
 
 // 코드 하이라이팅 설정
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -89,6 +94,10 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
   const [showImageToolbar, setShowImageToolbar] = useState(false);
   const [imageToolbarPosition, setImageToolbarPosition] = useState({ x: 0, y: 0 });
   const [selectedImageNode, setSelectedImageNode] = useState<any>(null);
+  const [currentImageAlignment, setCurrentImageAlignment] = useState<'left' | 'center' | 'right'>('left');
+  const [showBlockquoteToolbar, setShowBlockquoteToolbar] = useState(false);
+  const [blockquoteToolbarPosition, setBlockquoteToolbarPosition] = useState({ x: 0, y: 0 });
+  const [currentBlockquoteAlignment, setCurrentBlockquoteAlignment] = useState<'left' | 'center' | 'right'>('center');
 
   // 분리된 훅들 사용
   const { isImageUploading, handleImageUpload } = useImageUpload(blogId);
@@ -107,8 +116,12 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
           keepMarks: true,
           keepAttributes: false,
         },
+        blockquote: false, // 기본 blockquote 비활성화
+        horizontalRule: false, // 기본 horizontalRule 비활성화
       }),
-      Image.configure({
+      CustomBlockquote,
+      CustomHorizontalRule,
+      ResizableImage.configure({
         HTMLAttributes: {
           class: 'max-w-full h-auto cursor-pointer',
         },
@@ -269,6 +282,17 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
         alignments: ['left', 'center', 'right', 'justify'],
         defaultAlignment: 'left',
       }),
+      SlashCommand.configure({
+        suggestion: {
+          items: ({ query, editor }: { query: string; editor: any }) => getSuggestionItems({
+            query,
+            editor,
+            onImageUpload: handleImageUpload,
+            onAIButtonClick: handleAIButtonClick,
+          }),
+          render: renderItems,
+        },
+      }),
     ],
     content: initialContent || '<p></p>',
     editorProps: {
@@ -290,7 +314,10 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
             });
 
             if (pos) {
-              const imageNode = schema.nodes.image.create({ src: url });
+              const imageNode = schema.nodes.resizableImage.create({
+                src: url,
+                width: 400
+              });
               const transaction = view.state.tr.insert(pos.pos, imageNode);
               view.dispatch(transaction);
             }
@@ -308,7 +335,10 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
 
           handleImageUpload(files[0]).then((url) => {
             const { schema } = view.state;
-            const imageNode = schema.nodes.image.create({ src: url });
+            const imageNode = schema.nodes.resizableImage.create({
+              src: url,
+              width: 400
+            });
             const transaction = view.state.tr.replaceSelectionWith(imageNode);
             view.dispatch(transaction);
           });
@@ -329,9 +359,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
 
       // 선택된 노드가 이미지인지 확인
       state.doc.nodesBetween(from, to, (node, pos) => {
-        if (node.type.name === 'image') {
-          console.log('🖼️ 이미지 노드 선택됨:', node.attrs);
-
+        if (node.type.name === 'resizableImage') {
           // DOM에서 실제 이미지 엘리먼트 찾기
           setTimeout(() => {
             const editorElement = document.querySelector('.ProseMirror');
@@ -346,7 +374,6 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
                   });
                   setSelectedImageNode(img);
                   setShowImageToolbar(true);
-                  console.log('✅ 이미지 툴바 표시됨');
                   break;
                 }
               }
@@ -432,8 +459,6 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       return;
     }
 
-    console.log('📊 표 생성 시작:', { rows: tableRows, cols: tableCols });
-
     try {
       const result = editor
         .chain()
@@ -441,17 +466,12 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
         .insertTable({ rows: tableRows, cols: tableCols, withHeaderRow: false })
         .run();
 
-      console.log('✅ 표 생성 결과:', result);
-
       if (result) {
         setShowTableDropdown(false);
-        toast.success(`${tableRows}×${tableCols} 표가 생성되었습니다!`);
       } else {
-        console.warn('⚠️ 표 생성 명령이 실행되지 않음');
         toast.warning('표 생성에 실패했습니다. 커서 위치를 확인해주세요.');
       }
     } catch (error) {
-      console.error('❌ 표 생성 중 에러:', error);
       toast.error('표 생성 중 오류가 발생했습니다.');
     }
   }, [editor, tableRows, tableCols]);
@@ -474,6 +494,12 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
             y: rect.top
           });
           setSelectedImageNode(img);
+
+          // 현재 정렬 상태 감지
+          const parentElement = img.parentElement;
+          const alignAttr = parentElement?.getAttribute('data-align') || 'left';
+          setCurrentImageAlignment(alignAttr as 'left' | 'center' | 'right');
+
           setShowImageToolbar(true);
           setShowTableEditor(false);
           console.log('✅ 이미지 툴바 표시 설정 완료');
@@ -490,12 +516,33 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
           });
           setShowTableEditor(true);
           setShowImageToolbar(false); // 이미지 툴바는 닫기
+          setShowBlockquoteToolbar(false); // 인용구 툴바는 닫기
+        }
+      }
+      // 인용구 클릭 감지
+      else if (target.closest('blockquote')) {
+        const blockquote = target.closest('blockquote');
+        if (blockquote) {
+          const rect = blockquote.getBoundingClientRect();
+          setBlockquoteToolbarPosition({
+            x: rect.right + 10,
+            y: rect.top
+          });
+
+          // 현재 정렬 상태 감지
+          const alignAttr = blockquote.getAttribute('data-align') || 'center';
+          setCurrentBlockquoteAlignment(alignAttr as 'left' | 'center' | 'right');
+
+          setShowBlockquoteToolbar(true);
+          setShowTableEditor(false);
+          setShowImageToolbar(false);
         }
       }
       // 외부 클릭 시 모든 툴바 닫기
-      else if (!target.closest('.table-editor-panel') && !target.closest('.image-toolbar-panel')) {
+      else if (!target.closest('.table-editor-panel') && !target.closest('.image-toolbar-panel') && !target.closest('.blockquote-toolbar-panel')) {
         setShowTableEditor(false);
         setShowImageToolbar(false);
+        setShowBlockquoteToolbar(false);
       }
     };
 
@@ -617,17 +664,44 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
     if (!editor || !selectedImageNode) return;
 
     try {
-      // 현재 선택된 이미지 노드의 위치 찾기
+      const currentSrc = selectedImageNode.src;
       const { state } = editor;
-      const { selection } = state;
+      let imagePos = -1;
 
-      // 이미지를 감싸는 문단(p 태그)의 정렬 변경
-      editor.chain().focus().setTextAlign(alignment).run();
+      // 에디터에서 이미지 노드의 위치 찾기
+      state.doc.descendants((node, pos) => {
+        if (node.type.name === 'resizableImage' && node.attrs.src === currentSrc) {
+          imagePos = pos;
+          return false;
+        }
+      });
 
-      toast.success(`이미지가 ${alignment === 'left' ? '왼쪽' : alignment === 'center' ? '가운데' : '오른쪽'}으로 정렬되었습니다.`);
+      if (imagePos !== -1) {
+        const currentNode = state.doc.nodeAt(imagePos);
+
+        // 이미지 노드에 align 속성 업데이트
+        const tr = state.tr.setNodeMarkup(imagePos, undefined, {
+          ...currentNode?.attrs,
+          align: alignment
+        });
+        editor.view.dispatch(tr);
+
+        // DOM 즉시 업데이트
+        setTimeout(() => {
+          const container = selectedImageNode.closest('.image-resizer-container');
+          if (container) {
+            // 기존 정렬 클래스 제거
+            container.classList.remove('image-align-left', 'image-align-center', 'image-align-right');
+            // 새 정렬 클래스 추가
+            container.classList.add(`image-align-${alignment}`);
+            container.setAttribute('data-align', alignment);
+          }
+        }, 0);
+
+        // 정렬 상태 업데이트
+        setCurrentImageAlignment(alignment);
+      }
     } catch (error) {
-      console.error('❌ 이미지 정렬 실패:', error);
-      toast.error('이미지 정렬에 실패했습니다.');
     }
   };
 
@@ -636,59 +710,30 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
 
     try {
       const currentSrc = selectedImageNode.src;
+      const { state } = editor;
+      let imagePos = -1;
 
-      // 에디터에서 이미지 크기 업데이트
-      editor.chain().focus().setImage({
-        src: currentSrc,
-        width: width
-      }).run();
-
-      // DOM에서도 즉시 반영
-      selectedImageNode.style.width = `${width}px`;
-      selectedImageNode.style.height = 'auto';
-
-    } catch (error) {
-      console.error('❌ 이미지 크기 조절 실패:', error);
-      toast.error('이미지 크기 조절에 실패했습니다.');
-    }
-  };
-
-  const handleImageEffect = (effect: 'shadow' | 'border' | 'rounded', enabled: boolean) => {
-    if (!editor || !selectedImageNode) return;
-
-    try {
-      const currentSrc = selectedImageNode.src;
-      const currentWidth = selectedImageNode.width || 400;
-
-      // 현재 클래스 목록 가져오기
-      let currentClasses = selectedImageNode.className || 'max-w-full h-auto cursor-pointer';
-
-      // 효과 클래스 추가/제거
-      const effectClass = `image-${effect}`;
-
-      if (enabled) {
-        if (!currentClasses.includes(effectClass)) {
-          currentClasses += ` ${effectClass}`;
+      // 에디터에서 이미지 노드의 위치 찾기
+      state.doc.descendants((node, pos) => {
+        if (node.type.name === 'resizableImage' && node.attrs.src === currentSrc) {
+          imagePos = pos;
+          return false;
         }
-      } else {
-        currentClasses = currentClasses.replace(new RegExp(`\\s*${effectClass}\\s*`, 'g'), ' ');
+      });
+
+      if (imagePos !== -1) {
+        // 이미지 속성만 업데이트 (새로운 이미지 추가하지 않음)
+        const tr = state.tr.setNodeMarkup(imagePos, undefined, {
+          ...state.doc.nodeAt(imagePos)?.attrs,
+          width: width
+        });
+        editor.view.dispatch(tr);
+
+        // DOM에서도 즉시 반영
+        selectedImageNode.style.width = `${width}px`;
+        selectedImageNode.style.height = 'auto';
       }
-
-      // 에디터에서 이미지 속성 업데이트
-      editor.chain().focus().setImage({
-        src: currentSrc,
-        width: currentWidth,
-        class: currentClasses.trim()
-      }).run();
-
-      // DOM에서도 즉시 반영
-      selectedImageNode.className = currentClasses.trim();
-
-      const effectNames = { shadow: '그림자', border: '외곽선', rounded: '둥근 모서리' };
-      toast.success(`${effectNames[effect]}가 ${enabled ? '적용' : '제거'}되었습니다.`);
     } catch (error) {
-      console.error('❌ 이미지 효과 적용 실패:', error);
-      toast.error('이미지 효과 적용에 실패했습니다.');
     }
   };
 
@@ -820,6 +865,9 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
         )}
       </div>
 
+      {/* 구분선 툴바 */}
+      {editor && <DividerToolbarPortal editor={editor} />}
+
       {/* 테이블 편집 패널 */}
       <TableEditor
         editor={editor}
@@ -835,10 +883,21 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
         onDelete={handleImageDelete}
         onAlign={handleImageAlign}
         onResize={handleImageResize}
-        onApplyEffect={handleImageEffect}
         currentWidth={selectedImageNode?.width || 400}
+        currentAlignment={currentImageAlignment}
       />
 
+      {/* 인용구 편집 툴바 */}
+      {showBlockquoteToolbar && editor && (
+        <div className="blockquote-toolbar-panel">
+          <BlockquoteToolbar
+            editor={editor}
+            position={blockquoteToolbarPosition}
+            onClose={() => setShowBlockquoteToolbar(false)}
+            currentAlign={currentBlockquoteAlignment}
+          />
+        </div>
+      )}
 
       {/* AI 요약 기능 */}
       <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
