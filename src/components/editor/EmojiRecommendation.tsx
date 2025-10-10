@@ -159,6 +159,26 @@ const emojiMap: Record<string, { emoji: string; keywords: string[] }[]> = {
     { emoji: '😷', keywords: ['마스크', '감기', '아픔', '마스크쓰', '예방'] },
     { emoji: '🤒', keywords: ['열', '아파', '병', '감기', '몸살'] },
   ],
+  경제금융: [
+    { emoji: '💰', keywords: ['돈', '재정', '투자', '자산', '재산', '금융', '자금'] },
+    { emoji: '💵', keywords: ['달러', '현금', '지폐', '달러화', '미국돈', '미화'] },
+    { emoji: '💴', keywords: ['엔화', '일본', '엔', '일본돈', '일본화폐'] },
+    { emoji: '💶', keywords: ['유로', '유럽', '유로화', '유럽돈'] },
+    { emoji: '💷', keywords: ['파운드', '영국', '파운드화', '영국돈'] },
+    { emoji: '💸', keywords: ['지출', '소비', '돈쓰', '낭비', '지갑'] },
+    { emoji: '💳', keywords: ['카드', '결제', '신용카드', '체크카드', '카드결제'] },
+    { emoji: '🟡', keywords: ['코인', '동전', '암호화폐', '비트코인', '가상화폐', '코인투자', '디지털화폐', '이더리움', '알트코인'] },
+    { emoji: '💹', keywords: ['주가', '주식', '상승', '차트', '증시', '주식시장', '매수'] },
+    { emoji: '📈', keywords: ['그래프', '상승', '성장', '증가', '오름', '급등', '성장세'] },
+    { emoji: '📉', keywords: ['하락', '감소', '하락세', '내림', '급락', '손실', '마이너스'] },
+    { emoji: '💱', keywords: ['환전', '환율', '외환', '외화', '환전소', '외환거래'] },
+    { emoji: '🏦', keywords: ['은행', '금융', '저축', '예금', '은행가', '금융권'] },
+    { emoji: '💎', keywords: ['다이아몬드', '가치', '귀금속', '보석', '귀중품', '고가'] },
+    { emoji: '🤑', keywords: ['수익', '돈벌기', '부자', '돈많은', '대박', '부유'] },
+    { emoji: '💲', keywords: ['가격', '비용', '값', '요금', '금액'] },
+    { emoji: '🧾', keywords: ['영수증', '청구서', '계산서', '영수증', '세금'] },
+    { emoji: '💼', keywords: ['비즈니스', '사업', '거래', '계약', '협상'] },
+  ],
 };
 
 const EmojiRecommendation: React.FC<EmojiRecommendationProps> = ({ content, onInsertEmoji }) => {
@@ -190,10 +210,9 @@ const EmojiRecommendation: React.FC<EmojiRecommendationProps> = ({ content, onIn
       });
     });
 
-    // 점수 기준으로 정렬하고 상위 8개만 선택
+    // 점수 기준으로 정렬하고 모든 관련 이모지 선택
     const sortedEmojis = Object.values(emojiScores)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 8)
       .map(item => ({
         emoji: item.emoji,
         reason: `"${item.matchedKeywords.join(', ')}" 관련`,
@@ -219,40 +238,22 @@ const EmojiRecommendation: React.FC<EmojiRecommendationProps> = ({ content, onIn
   }
 
   return (
-    <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-purple-600" />
-          <h3 className="text-sm font-semibold text-purple-900">추천 이모지</h3>
-        </div>
-        {isAnalyzing && (
-          <span className="text-xs text-purple-600">분석 중...</span>
-        )}
-      </div>
-
-      <p className="text-xs text-purple-700 mb-3">
-        작성하신 내용을 분석하여 어울리는 이모지를 추천해드립니다
-      </p>
-
-      <div className="grid grid-cols-4 gap-2">
-        {recommendedEmojis.map((item, index) => (
-          <button
-            key={index}
-            onClick={() => onInsertEmoji(item.emoji)}
-            className="group relative p-3 bg-white rounded-lg border border-purple-200 hover:border-purple-400 hover:bg-purple-50 transition-all"
-            title={item.reason}
-          >
-            <div className="text-3xl text-center mb-1">{item.emoji}</div>
-            <div className="text-xs text-purple-600 text-center truncate">
-              {item.reason}
-            </div>
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-3 text-xs text-purple-600 text-center">
-        💡 이모지를 클릭하면 커서 위치에 삽입됩니다
-      </div>
+    <div className="flex items-center gap-2">
+      <Sparkles className="w-4 h-4 text-gray-400" />
+      <span className="text-xs text-gray-500">추천:</span>
+      {recommendedEmojis.slice(0, 8).map((item, index) => (
+        <button
+          key={index}
+          onClick={() => onInsertEmoji(item.emoji)}
+          className="p-1 hover:bg-gray-100 rounded transition-all"
+          title={item.reason}
+        >
+          <div className="text-xl">{item.emoji}</div>
+        </button>
+      ))}
+      {isAnalyzing && (
+        <span className="text-xs text-gray-400 ml-auto">분석 중...</span>
+      )}
     </div>
   );
 };

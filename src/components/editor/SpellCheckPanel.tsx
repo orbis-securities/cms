@@ -14,14 +14,14 @@ interface SpellError {
 interface SpellCheckPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  content: string;
+  getContent: () => string;
   onApplyFix: (original: string, suggestion: string) => void;
 }
 
 const SpellCheckPanel: React.FC<SpellCheckPanelProps> = ({
   isOpen,
   onClose,
-  content,
+  getContent,
   onApplyFix
 }) => {
   const [errors, setErrors] = useState<SpellError[]>([]);
@@ -31,7 +31,13 @@ const SpellCheckPanel: React.FC<SpellCheckPanelProps> = ({
 
   // 맞춤법 검사 실행
   const runSpellCheck = async () => {
-    if (!content.trim()) return;
+    const content = getContent();
+    console.log('🔍 맞춤법 검사 시작 - 원본 내용:', content);
+
+    if (!content.trim()) {
+      console.warn('⚠️ 내용이 비어있습니다');
+      return;
+    }
 
     setIsChecking(true);
     setErrors([]);
@@ -41,12 +47,15 @@ const SpellCheckPanel: React.FC<SpellCheckPanelProps> = ({
     try {
       // HTML 태그 제거하여 순수 텍스트만 추출
       const textContent = content.replace(/<[^>]*>/g, '').trim();
+      console.log('📝 추출된 텍스트:', textContent);
 
       if (!textContent) {
+        console.warn('⚠️ 텍스트 추출 후 내용이 비어있습니다');
         setErrors([]);
         return;
       }
 
+      console.log('📡 API 호출 중...');
       const response = await fetch('/api/enhance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -68,10 +77,12 @@ const SpellCheckPanel: React.FC<SpellCheckPanelProps> = ({
       });
 
       const data = await response.json();
+      console.log('📦 API 응답:', data);
 
       if (response.ok && data.success) {
         // AI 응답에서 JSON 부분 추출
         const aiResponse = data.enhanced;
+        console.log('🤖 AI 응답 원문:', aiResponse);
         let parsedErrors: SpellError[] = [];
 
         try {
@@ -190,7 +201,7 @@ const SpellCheckPanel: React.FC<SpellCheckPanelProps> = ({
       <div className="p-4 border-b border-gray-100">
         <button
           onClick={runSpellCheck}
-          disabled={isChecking || !content.trim()}
+          disabled={isChecking}
           className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
           {isChecking ? (

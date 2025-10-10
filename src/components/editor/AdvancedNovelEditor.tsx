@@ -62,6 +62,8 @@ interface AdvancedNovelEditorProps {
   onBlogChange?: (blogId: string) => void;
   getDesignSettings?: (blogId: string) => Promise<any>;
   className?: string;
+  onSetFeatured?: (imageUrl: string) => void;
+  featuredImage?: string;
 }
 
 export interface AdvancedNovelEditorRef {
@@ -78,7 +80,9 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
   availableBlogs = [],
   onBlogChange,
   getDesignSettings,
-  className
+  className,
+  onSetFeatured,
+  featuredImage
 }: AdvancedNovelEditorProps, ref) => {
   const [content, setContent] = useState(initialContent);
   const [isSaving, setIsSaving] = useState(false);
@@ -648,10 +652,8 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
 
     try {
       editor.chain().focus().insertContent(emoji).run();
-      toast.success(`이모지 ${emoji} 삽입 완료!`);
     } catch (error) {
       console.error('❌ 이모지 삽입 실패:', error);
-      toast.error('이모지 삽입에 실패했습니다.');
     }
   };
 
@@ -815,6 +817,14 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
           showAICompletion={showAICompletion}
         />
 
+        {/* 이모지 추천 */}
+        <div className="px-4 pt-2">
+          <EmojiRecommendation
+            content={content}
+            onInsertEmoji={handleInsertEmoji}
+          />
+        </div>
+
         {/* 에디터 모드 탭 */}
         <div className="border-b bg-gray-50 px-4">
           <div className="flex gap-1">
@@ -899,8 +909,11 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
         onDelete={handleImageDelete}
         onAlign={handleImageAlign}
         onResize={handleImageResize}
+        onSetFeatured={onSetFeatured}
         currentWidth={selectedImageNode?.width || 400}
         currentAlignment={currentImageAlignment}
+        currentImageUrl={selectedImageNode?.src || ''}
+        isFeatured={featuredImage === selectedImageNode?.src}
       />
 
       {/* 인용구 편집 툴바 */}
@@ -933,13 +946,6 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
               '요약하기'
             )}
           </button>
-          <button
-            onClick={() => setShowSpellCheck(true)}
-            disabled={!content.trim()}
-            className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm rounded-lg hover:from-blue-600 hover:to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
-          >
-            🔤 맞춤법
-          </button>
           <div className="flex-1">
             <input
               type="text"
@@ -962,17 +968,11 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
         </div>
       </div>
 
-      {/* 이모지 추천 */}
-      <EmojiRecommendation
-        content={content}
-        onInsertEmoji={handleInsertEmoji}
-      />
-
       {/* 맞춤법 검사 패널 */}
       <SpellCheckPanel
         isOpen={showSpellCheck}
         onClose={() => setShowSpellCheck(false)}
-        content={content}
+        getContent={() => editor?.getHTML() || content}
         onApplyFix={handleApplySpellFix}
       />
 

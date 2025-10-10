@@ -21,6 +21,7 @@ export async function savePostToFirestore(
     metaDescription?: string;
     keywords?: string[];
     status: PostStatus;
+    featuredImage?: string;
   }
 ): Promise<string> {
   try {

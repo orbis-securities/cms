@@ -18,9 +18,11 @@ import {
   Upload,
   X,
   Loader2,
-  ArrowLeft
+  ArrowLeft,
+  FileText
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
+import SpellCheckPanel from '@/components/editor/SpellCheckPanel';
 
 function WritePageContent() {
   const searchParams = useSearchParams();
@@ -50,6 +52,8 @@ function WritePageContent() {
   const [currentPostId, setCurrentPostId] = useState(editPostId || '');
   const [showPublishedPreview, setShowPublishedPreview] = useState(false);
   const [publishedPostUrl, setPublishedPostUrl] = useState('');
+  const [showSpellCheck, setShowSpellCheck] = useState(false);
+  const [featuredImage, setFeaturedImage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<AdvancedNovelEditorRef>(null);
 
@@ -88,6 +92,7 @@ function WritePageContent() {
             setMetaTitle(post.seo?.metaTitle || '');
             setMetaDescription(post.seo?.metaDescription || '');
             setKeywords(post.seo?.keywords?.join(', ') || '');
+            setFeaturedImage(post.featuredImage || '');
             console.log('✅ 수정할 포스트 로드 완료:', post.title);
           } else {
             console.warn('⚠️ 포스트를 찾을 수 없음');
@@ -161,7 +166,7 @@ function WritePageContent() {
 
   const handleSave = (content: string) => {
     // 자동 저장 비활성화 (수동으로만 저장)
-    // setPostContent(content);
+    setPostContent(content);
   };
 
   const handleSaveAsDraft = async () => {
@@ -193,6 +198,7 @@ function WritePageContent() {
           categories: [category],
           tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
           status: 'draft',
+          featuredImage: featuredImage,
           seo: {
             metaTitle: metaTitle || postTitle,
             metaDescription: metaDescription,
@@ -218,7 +224,8 @@ function WritePageContent() {
             metaTitle: metaTitle || postTitle,
             metaDescription: metaDescription,
             keywords: keywords.split(',').map(keyword => keyword.trim()).filter(Boolean),
-            status: 'draft'
+            status: 'draft',
+            featuredImage: featuredImage
           }
         );
 
@@ -270,6 +277,7 @@ function WritePageContent() {
           tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
           status: 'published',
           publishedAt: Timestamp.now(),
+          featuredImage: featuredImage,
           seo: {
             metaTitle: metaTitle || postTitle,
             metaDescription: metaDescription,
@@ -299,7 +307,8 @@ function WritePageContent() {
             metaTitle: metaTitle || postTitle,
             metaDescription: metaDescription,
             keywords: keywords.split(',').map(keyword => keyword.trim()).filter(Boolean),
-            status: 'published'
+            status: 'published',
+            featuredImage: featuredImage
           }
         );
 
@@ -465,6 +474,38 @@ function WritePageContent() {
     toast.success('이미지가 제거되었습니다.');
   };
 
+  const handleSetFeatured = (imageUrl: string) => {
+    setFeaturedImage(imageUrl);
+    toast.success('타이틀 이미지가 설정되었습니다.');
+  };
+
+  // 맞춤법 수정 적용
+  const handleApplySpellFix = (original: string, suggestion: string) => {
+    if (editorRef.current) {
+      const currentContent = editorRef.current.getHTML?.() || postContent;
+      console.log('🔧 맞춤법 수정 적용:', { original, suggestion, currentContent: currentContent.substring(0, 100) });
+
+      // 정규식 특수문자 이스케이프
+      const escapedOriginal = original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const updatedContent = currentContent.replace(new RegExp(escapedOriginal, 'g'), suggestion);
+
+      console.log('✅ 수정된 내용:', updatedContent.substring(0, 100));
+
+      // 에디터 내용 업데이트
+      setPostContent(updatedContent);
+
+      // 에디터에 직접 설정 (chain 사용)
+      if (editorRef.current.chain) {
+        const chain = editorRef.current.chain();
+        if (chain && typeof chain === 'object' && 'focus' in chain) {
+          (chain as any).focus().setContent(updatedContent).run();
+        }
+      }
+
+      toast.success(`"${original}" → "${suggestion}" 수정 완료!`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Toaster position="top-right" />
@@ -510,6 +551,13 @@ function WritePageContent() {
               AI 활성화
             </div>
             */}
+            <button
+              className="px-3 py-1 border rounded text-sm hover:bg-gray-50"
+              onClick={() => setShowSpellCheck(!showSpellCheck)}
+            >
+              <FileText className="w-4 h-4 inline mr-1" />
+              맞춤법 검사
+            </button>
             <button
               className="px-3 py-1 border rounded text-sm"
               onClick={() => {
@@ -609,6 +657,8 @@ function WritePageContent() {
                     availableBlogs={availableBlogs}
                     onBlogChange={setSelectedBlog}
                     getDesignSettings={getBlogSettings}
+                    onSetFeatured={handleSetFeatured}
+                    featuredImage={featuredImage}
                     ref={editorRef}
                   />
                 )}
@@ -755,8 +805,8 @@ function WritePageContent() {
                   <div className="space-y-2">
                     {uploadedImages.map((image, index) => (
                       <div key={index} className="flex items-center gap-2 p-2 border rounded hover:bg-gray-50">
-                        <img 
-                          src={image.url} 
+                        <img
+                          src={image.url}
                           alt={image.name}
                           className="w-10 h-10 object-cover rounded"
                         />
@@ -785,6 +835,35 @@ function WritePageContent() {
                 </div>
               )}
             </div>
+
+            {/* 타이틀 이미지 */}
+            {featuredImage && (
+              <div className="bg-white rounded-lg border p-4">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                  ⭐ 타이틀 이미지
+                </h3>
+                <div className="relative">
+                  <img
+                    src={featuredImage}
+                    alt="Featured"
+                    className="w-full h-auto rounded-lg border border-gray-200"
+                  />
+                  <button
+                    onClick={() => {
+                      setFeaturedImage('');
+                      toast.success('타이틀 이미지가 해제되었습니다.');
+                    }}
+                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                    title="타이틀 이미지 해제"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  본문에서 이미지를 클릭하여 타이틀 이미지를 변경할 수 있습니다.
+                </p>
+              </div>
+            )}
 
             {/* SEO 설정 */}
             <div className="bg-white rounded-lg border p-4">
@@ -863,6 +942,7 @@ function WritePageContent() {
                     setMetaTitle('');
                     setMetaDescription('');
                     setKeywords('');
+                    setFeaturedImage('');
                     setCurrentPostId('');
                     // 에디터 강제 리렌더링을 위한 방법
                     if (editorRef.current) {
@@ -929,6 +1009,14 @@ function WritePageContent() {
           </div>
         </div>
       </div>
+
+      {/* 맞춤법 검사 패널 */}
+      <SpellCheckPanel
+        isOpen={showSpellCheck}
+        onClose={() => setShowSpellCheck(false)}
+        getContent={() => editorRef.current?.getHTML?.() || postContent}
+        onApplyFix={handleApplySpellFix}
+      />
     </div>
   );
 }

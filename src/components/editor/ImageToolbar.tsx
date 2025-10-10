@@ -9,8 +9,11 @@ interface ImageToolbarProps {
   onDelete: () => void;
   onAlign: (alignment: 'left' | 'center' | 'right') => void;
   onResize: (width: number) => void;
+  onSetFeatured?: (imageUrl: string) => void;
   currentWidth?: number;
   currentAlignment?: 'left' | 'center' | 'right';
+  currentImageUrl?: string;
+  isFeatured?: boolean;
 }
 
 const ImageToolbar: React.FC<ImageToolbarProps> = ({
@@ -19,8 +22,11 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
   onDelete,
   onAlign,
   onResize,
+  onSetFeatured,
   currentWidth = 400,
-  currentAlignment = 'left'
+  currentAlignment = 'left',
+  currentImageUrl = '',
+  isFeatured = false
 }) => {
   const [width, setWidth] = useState(currentWidth);
 
@@ -139,6 +145,23 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           </button>
         </div>
       </div>
+
+      {/* 타이틀 이미지 설정 */}
+      {onSetFeatured && (
+        <div className="mb-3">
+          <button
+            onClick={() => onSetFeatured(currentImageUrl)}
+            className={`w-full p-3 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 ${
+              isFeatured
+                ? 'bg-yellow-100 text-yellow-700 border border-yellow-300'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <span className="text-base">⭐</span>
+            {isFeatured ? '타이틀 이미지로 설정됨' : '타이틀 이미지로 설정'}
+          </button>
+        </div>
+      )}
 
       {/* 삭제 버튼 */}
       <div className="border-t border-gray-100 pt-4">
