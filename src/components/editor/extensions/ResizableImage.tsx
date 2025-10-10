@@ -5,14 +5,43 @@ export const ResizableImage = Image.extend({
 
   addAttributes() {
     return {
-      ...this.parent?.(),
+      src: {
+        default: null,
+        parseHTML: (element: HTMLElement) => element.getAttribute('src'),
+        renderHTML: (attributes: any) => {
+          if (!attributes.src) {
+            return {};
+          }
+          return { src: attributes.src };
+        },
+      },
+      alt: {
+        default: null,
+        parseHTML: (element: HTMLElement) => element.getAttribute('alt'),
+        renderHTML: (attributes: any) => {
+          if (!attributes.alt) {
+            return {};
+          }
+          return { alt: attributes.alt };
+        },
+      },
+      title: {
+        default: null,
+        parseHTML: (element: HTMLElement) => element.getAttribute('title'),
+        renderHTML: (attributes: any) => {
+          if (!attributes.title) {
+            return {};
+          }
+          return { title: attributes.title };
+        },
+      },
       width: {
         default: null,
-        parseHTML: element => {
+        parseHTML: (element: HTMLElement) => {
           const width = element.style.width || element.getAttribute('width');
           return width ? parseInt(width) : null;
         },
-        renderHTML: attributes => {
+        renderHTML: (attributes: any) => {
           if (!attributes.width) {
             return {};
           }
@@ -23,10 +52,10 @@ export const ResizableImage = Image.extend({
       },
       align: {
         default: 'left',
-        parseHTML: element => {
+        parseHTML: (element: HTMLElement) => {
           return element.getAttribute('data-align') || element.parentElement?.getAttribute('data-align') || 'left';
         },
-        renderHTML: attributes => {
+        renderHTML: (attributes: any) => {
           return {
             'data-align': attributes.align || 'left',
           };
@@ -35,7 +64,7 @@ export const ResizableImage = Image.extend({
     };
   },
 
-  renderHTML({ HTMLAttributes, node }) {
+  renderHTML({ HTMLAttributes, node }: { HTMLAttributes: Record<string, any>; node: any }) {
     const align = node.attrs.align || 'left';
     const width = node.attrs.width;
 
@@ -71,7 +100,7 @@ export const ResizableImage = Image.extend({
   },
 
   addNodeView() {
-    return ({ node, getPos, editor }) => {
+    return ({ node, getPos, editor }: { node: any; getPos: any; editor: any }) => {
       const container = document.createElement('div');
       const align = node.attrs.align || 'left';
       container.className = `image-resizer-container image-align-${align}`;
@@ -179,7 +208,7 @@ export const ResizableImage = Image.extend({
 
       return {
         dom: container,
-        update: (updatedNode) => {
+        update: (updatedNode: any) => {
           if (updatedNode.type.name !== 'resizableImage') return false;
 
           img.src = updatedNode.attrs.src;

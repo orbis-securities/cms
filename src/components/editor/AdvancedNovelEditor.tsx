@@ -66,6 +66,7 @@ interface AdvancedNovelEditorProps {
 export interface AdvancedNovelEditorRef {
   chain: () => unknown | undefined;
   getHTML?: () => string;
+  clearContent?: () => void;
 }
 
 const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEditorProps>(({
@@ -423,7 +424,8 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
   // Ref 노출
   useImperativeHandle(ref, () => ({
     chain: () => editor?.chain(),
-    getHTML: () => editor?.getHTML() || ''
+    getHTML: () => editor?.getHTML() || '',
+    clearContent: () => editor?.chain().clearContent().run()
   }), [editor]);
 
   // 드롭다운 자동 닫기 (외부 클릭 감지) - editor 정의 후

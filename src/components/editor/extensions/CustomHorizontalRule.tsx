@@ -16,8 +16,8 @@ export const CustomHorizontalRule = HorizontalRule.extend({
     return {
       class: {
         default: null,
-        parseHTML: element => element.getAttribute('class'),
-        renderHTML: attributes => {
+        parseHTML: (element: HTMLElement) => element.getAttribute('class'),
+        renderHTML: (attributes: any) => {
           if (!attributes.class) {
             return {};
           }
@@ -28,8 +28,8 @@ export const CustomHorizontalRule = HorizontalRule.extend({
       },
       'data-align': {
         default: 'center',
-        parseHTML: element => element.getAttribute('data-align'),
-        renderHTML: attributes => {
+        parseHTML: (element: HTMLElement) => element.getAttribute('data-align'),
+        renderHTML: (attributes: any) => {
           return {
             'data-align': attributes['data-align'],
           };
@@ -40,7 +40,7 @@ export const CustomHorizontalRule = HorizontalRule.extend({
 
   addCommands() {
     return {
-      setHorizontalRule: (attributes = {}) => ({ commands }) => {
+      setHorizontalRule: (attributes = {}) => ({ commands }: { commands: any }) => {
         return commands.insertContent({
           type: this.name,
           attrs: mergeAttributes(this.options, attributes),

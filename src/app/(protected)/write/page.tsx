@@ -866,7 +866,7 @@ function WritePageContent() {
                     setCurrentPostId('');
                     // 에디터 강제 리렌더링을 위한 방법
                     if (editorRef.current) {
-                      editorRef.current.chain?.()?.clearContent()?.run?.();
+                      editorRef.current.clearContent?.();
                     }
                   }}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
