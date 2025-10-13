@@ -23,11 +23,13 @@ import {
   AlignCenter,
   AlignRight,
   TrendingUp,
-  BarChart3
+  BarChart3,
+  LineChart as LineChartIcon
 } from 'lucide-react';
 import CustomEmojiPicker from './EmojiPicker';
 import SymbolSelectModal from './SymbolSelectModal';
 import PollConfigModal from './PollConfigModal';
+import ChartDialog from './ChartDialog';
 import { createRoot } from 'react-dom/client';
 // import ColorPalette from './ColorPalette';
 // import FontSelector from './FontSelector';
@@ -73,6 +75,7 @@ export default function EditorToolbar({
   const [showDividerDropdown, setShowDividerDropdown] = useState(false);
   const [showMarketWidgetDropdown, setShowMarketWidgetDropdown] = useState(false);
   const [showPollModal, setShowPollModal] = useState(false);
+  const [showChartDialog, setShowChartDialog] = useState(false);
 
   // 최근 색상 불러오기 (모달 열 때)
   useEffect(() => {
@@ -328,6 +331,56 @@ export default function EditorToolbar({
                     </button>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* 폰트 크기 조절 */}
+            <div className="mb-3">
+              <div className="text-xs text-gray-500 mb-1">글자 크기 (px)</div>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="number"
+                  min="8"
+                  max="200"
+                  placeholder="크기"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const input = e.target as HTMLInputElement;
+                      const fontSize = input.value;
+                      if (editor && fontSize) {
+                        (editor as any).chain().focus().setFontSize(`${fontSize}px`).run();
+                      }
+                    }
+                  }}
+                  className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={() => {
+                    if (editor) {
+                      (editor as any).chain().focus().unsetFontSize().run();
+                    }
+                  }}
+                  className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
+                  title="기본 크기로"
+                >
+                  초기화
+                </button>
+              </div>
+              <div className="grid grid-cols-6 gap-1">
+                {[10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 42, 48, 56, 64, 72, 96].map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => {
+                      if (editor) {
+                        (editor as any).chain().focus().setFontSize(`${size}px`).run();
+                      }
+                    }}
+                    className="px-2 py-1 text-xs border border-gray-200 rounded hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                    title={`${size}px`}
+                  >
+                    {size}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -1049,6 +1102,33 @@ export default function EditorToolbar({
             (editor as any).chain().focus().insertPoll(config).run();
           }
           setShowPollModal(false);
+        }}
+      />
+
+      {/* 차트 */}
+      <button
+        onClick={() => setShowChartDialog(true)}
+        className="p-2 rounded hover:bg-gray-100"
+        title="차트/그래프 삽입"
+      >
+        <LineChartIcon className="w-4 h-4" />
+      </button>
+
+      {/* 차트 다이얼로그 */}
+      <ChartDialog
+        isOpen={showChartDialog}
+        onClose={() => setShowChartDialog(false)}
+        onInsert={(chartType, data, title, units, colors) => {
+          console.log('🎯 EditorToolbar onInsert 호출:', {
+            chartType,
+            dataLength: data.length,
+            title,
+            units,
+            colors
+          });
+          if (editor) {
+            (editor as any).chain().focus().insertChart({ chartType, data, title, units, colors }).run();
+          }
         }}
       />
     </div>

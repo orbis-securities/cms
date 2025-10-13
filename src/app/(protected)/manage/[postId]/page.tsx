@@ -10,6 +10,7 @@ import { toast, Toaster } from 'sonner';
 import { createRoot } from 'react-dom/client';
 import { MarketWidgetView } from '@/components/editor/MarketWidgetView';
 import { PollView } from '@/components/editor/PollView';
+import ChartView from '@/components/editor/ChartView';
 import React from 'react';
 
 export default function PostDetailPage() {
@@ -148,6 +149,42 @@ export default function PostDetailPage() {
       }
     });
   }, [post, blogId, postId]);
+
+  // 차트를 React 컴포넌트로 렌더링
+  useEffect(() => {
+    if (!post || !contentRef.current) return;
+
+    const container = contentRef.current;
+    const chartNodes = container.querySelectorAll('[data-type="chart"]');
+
+    chartNodes.forEach((chartNode) => {
+      const chartType = chartNode.getAttribute('data-chart-type') as 'bar' | 'line' | 'pie' | 'area';
+      const dataStr = chartNode.getAttribute('data-chart-data');
+      const title = chartNode.getAttribute('data-chart-title') || '';
+      const unitsStr = chartNode.getAttribute('data-units');
+      const colorsStr = chartNode.getAttribute('data-colors');
+
+      const data = dataStr ? JSON.parse(dataStr) : [];
+      const units = unitsStr ? JSON.parse(unitsStr) : {};
+      const colors = colorsStr ? JSON.parse(colorsStr) : {};
+
+      // React 컴포넌트를 렌더링할 컨테이너 생성
+      const reactContainer = document.createElement('div');
+      chartNode.replaceWith(reactContainer);
+
+      // React 컴포넌트 렌더링
+      const root = createRoot(reactContainer);
+      root.render(
+        React.createElement(ChartView, {
+          type: chartType || 'bar',
+          data: data,
+          title: title,
+          units: units,
+          colors: colors,
+        })
+      );
+    });
+  }, [post]);
 
   const handleDelete = async () => {
     if (!post || !blogId) return;

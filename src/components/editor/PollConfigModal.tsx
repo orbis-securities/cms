@@ -71,8 +71,8 @@ export default function PollConfigModal({ isOpen, onClose, onConfirm }: PollConf
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-2">
@@ -98,7 +98,7 @@ export default function PollConfigModal({ isOpen, onClose, onConfirm }: PollConf
               type="text"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="예: 가장 좋아하는 프로그래밍 언어는?"
+              placeholder="예: 자동매매 돌릴 때 가장 신경 쓰는 건 뭔가요?"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               maxLength={200}
             />

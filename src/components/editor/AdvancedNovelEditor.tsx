@@ -23,6 +23,8 @@ import { CustomBlockquote } from './extensions/CustomBlockquote';
 import { CustomHorizontalRule } from './extensions/CustomHorizontalRule';
 import { MarketWidget } from './extensions/MarketWidget';
 import { PollExtension } from './extensions/PollExtension';
+import { ChartExtension } from './extensions/ChartExtension';
+import { FontSize } from './extensions/FontSize';
 import { DividerToolbarPortal } from './DividerToolbarPortal';
 import { SlashCommand, getSuggestionItems, renderItems } from './extensions/SlashCommand';
 
@@ -130,6 +132,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       CustomHorizontalRule,
       MarketWidget,
       PollExtension,
+      ChartExtension,
       ResizableImage.configure({
         HTMLAttributes: {
           class: 'max-w-full h-auto cursor-pointer',
@@ -153,6 +156,9 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       }),
       Highlight.configure({
         multicolor: true,
+      }),
+      FontSize.configure({
+        types: ['textStyle'],
       }),
       Table.configure({
         resizable: true,
@@ -412,9 +418,12 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
   useEffect(() => {
     if (initialContent && initialContent !== content && editor && !showAICompletion) {
       setContent(initialContent);
-      editor.commands.setContent(initialContent);
+      // 다음 렌더링 사이클로 지연시켜 flushSync 경고 방지
+      setTimeout(() => {
+        editor.commands.setContent(initialContent);
+      }, 0);
     }
-  }, [initialContent, editor, showAICompletion]);
+  }, [initialContent, editor, showAICompletion]); // content 의존성 제거로 에디터 내부 변경 시 리셋 방지
 
   // 자동 저장
   useEffect(() => {

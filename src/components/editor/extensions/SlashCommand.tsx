@@ -6,6 +6,8 @@ import { CommandsList, CommandItem } from '../CommandsList';
 import { createRoot } from 'react-dom/client';
 import React from 'react';
 import SymbolSelectModal from '../SymbolSelectModal';
+import PollConfigModal from '../PollConfigModal';
+import ChartDialog from '../ChartDialog';
 
 export const SlashCommand = Extension.create({
   name: 'slashCommand',
@@ -315,6 +317,76 @@ export const getSuggestionItems = ({ query, editor, onImageUpload, onAIButtonCli
           },
         },
       ],
+    },
+    {
+      title: '투표',
+      icon: '🗳️',
+      description: '투표/설문조사를 삽입합니다',
+      command: ({ editor, range }: { editor: any; range: any }) => {
+        editor.chain().focus().deleteRange(range).run();
+
+        // 모달 컨테이너 생성
+        const modalContainer = document.createElement('div');
+        document.body.appendChild(modalContainer);
+        const root = createRoot(modalContainer);
+
+        const handleClose = () => {
+          root.unmount();
+          setTimeout(() => {
+            if (modalContainer.parentNode) {
+              modalContainer.parentNode.removeChild(modalContainer);
+            }
+          }, 0);
+        };
+
+        const handleConfirm = (config: any) => {
+          (editor as any).chain().focus().insertPoll(config).run();
+          handleClose();
+        };
+
+        root.render(
+          React.createElement(PollConfigModal, {
+            isOpen: true,
+            onClose: handleClose,
+            onConfirm: handleConfirm,
+          })
+        );
+      },
+    },
+    {
+      title: '차트',
+      icon: '📈',
+      description: '차트/그래프를 삽입합니다',
+      command: ({ editor, range }: { editor: any; range: any }) => {
+        editor.chain().focus().deleteRange(range).run();
+
+        // 모달 컨테이너 생성
+        const modalContainer = document.createElement('div');
+        document.body.appendChild(modalContainer);
+        const root = createRoot(modalContainer);
+
+        const handleClose = () => {
+          root.unmount();
+          setTimeout(() => {
+            if (modalContainer.parentNode) {
+              modalContainer.parentNode.removeChild(modalContainer);
+            }
+          }, 0);
+        };
+
+        const handleInsert = (chartType: 'bar' | 'line' | 'pie' | 'area', data: any[], title: string, units: Record<string, string>, colors: Record<string, string>) => {
+          (editor as any).chain().focus().insertChart({ chartType, data, title, units, colors }).run();
+          handleClose();
+        };
+
+        root.render(
+          React.createElement(ChartDialog, {
+            isOpen: true,
+            onClose: handleClose,
+            onInsert: handleInsert,
+          })
+        );
+      },
     },
   ];
 

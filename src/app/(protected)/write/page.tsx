@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import SpellCheckPanel from '@/components/editor/SpellCheckPanel';
+import { inlineStyles } from '@/lib/utils/htmlStyleInliner';
 
 function WritePageContent() {
   const searchParams = useSearchParams();
@@ -249,7 +250,10 @@ function WritePageContent() {
         console.log('💾 포스트 수정 저장 시작:', postTitle);
 
         // 에디터에서 최신 내용 가져오기
-        const editorContent = editorRef.current?.getHTML?.() || postContent;
+        let editorContent = editorRef.current?.getHTML?.() || postContent;
+
+        // 스타일 인라인화 (클래스 기반 스타일을 인라인으로 변환)
+        editorContent = inlineStyles(editorContent);
 
         // poll 데이터 추출 (여러 개)
         const pollsData = extractPollsDataFromHTML(editorContent);
@@ -275,7 +279,10 @@ function WritePageContent() {
         console.log('💾 포스트 초안 저장 시작:', postTitle);
 
         // 에디터에서 최신 내용 가져오기
-        const editorContent = editorRef.current?.getHTML?.() || postContent;
+        let editorContent = editorRef.current?.getHTML?.() || postContent;
+
+        // 스타일 인라인화 (클래스 기반 스타일을 인라인으로 변환)
+        editorContent = inlineStyles(editorContent);
 
         // poll 데이터 추출 (여러 개)
         const pollsData = extractPollsDataFromHTML(editorContent);
@@ -331,6 +338,9 @@ function WritePageContent() {
       return;
     }
 
+    // 스타일 인라인화 (클래스 기반 스타일을 인라인으로 변환)
+    const inlinedContent = inlineStyles(editorContent);
+
     setIsPublishing(true);
     try {
       if (currentPostId) {
@@ -338,11 +348,11 @@ function WritePageContent() {
         console.log('🚀 포스트 수정 발행 시작:', postTitle);
 
         // poll 데이터 추출 (여러 개)
-        const pollsData = extractPollsDataFromHTML(editorContent);
+        const pollsData = extractPollsDataFromHTML(inlinedContent);
 
         await updatePostInFirestore(selectedBlog, currentPostId, {
           title: postTitle,
-          content: editorContent,
+          content: inlinedContent,
           categories: [category],
           tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
           status: 'published',
@@ -369,11 +379,11 @@ function WritePageContent() {
         console.log('🚀 포스트 발행 시작:', postTitle);
 
         // poll 데이터 추출 (여러 개)
-        const pollsData = extractPollsDataFromHTML(editorContent);
+        const pollsData = extractPollsDataFromHTML(inlinedContent);
 
         const postId = await savePostToFirestore(
           postTitle,
-          editorContent,
+          inlinedContent,
           selectedBlog,
           {
             category,
