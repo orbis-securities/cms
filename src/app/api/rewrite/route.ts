@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     // Gemini API 호출
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-flash-latest",
       generationConfig: {
         maxOutputTokens: 1000,
         temperature: 0.6, // 리라이팅은 좀 더 일관성 있게

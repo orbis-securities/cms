@@ -62,7 +62,7 @@ ${content}
 
     // Gemini API 호출
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-flash-latest",
       generationConfig: {
         maxOutputTokens: 2000, // 본문 보강은 더 많은 토큰
         temperature: 0.7,

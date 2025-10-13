@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     // Gemini API 호출 (토큰 제한 설정)
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-flash-latest",
       generationConfig: {
         maxOutputTokens: 1000, // 최대 1000토큰 (고품질 장문 생성)
         temperature: 0.7,      // 창의성 조절 (0-1)

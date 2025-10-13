@@ -666,7 +666,7 @@ function WritePageContent() {
         }
       }
 
-      toast.success(`"${original}" → "${suggestion}" 수정 완료!`);
+      toast.success(`"${original}" → "${suggestion}" 수정 완료!`, { position: 'top-center' });
     }
   };
 
