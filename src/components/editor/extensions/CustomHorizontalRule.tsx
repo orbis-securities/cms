@@ -38,7 +38,7 @@ export const CustomHorizontalRule = HorizontalRule.extend({
     };
   },
 
-  renderHTML({ HTMLAttributes }) {
+  renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, any> }) {
     return ['hr', HTMLAttributes];
   },
 
