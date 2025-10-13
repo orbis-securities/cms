@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { PenTool, FileText, Settings, LogOut, User } from 'lucide-react';
+import { PenTool, FileText, Settings, LogOut, User, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { signOutUser } from '@/lib/firebase/auth';
 import { toast } from 'sonner';
@@ -46,6 +46,13 @@ export default function Dashboard() {
                   <User className="w-4 h-4" />
                   <span>{user.email}</span>
                 </div>
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700"
+                >
+                  <Users className="w-4 h-4" />
+                  내 정보
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700"

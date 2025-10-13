@@ -209,6 +209,13 @@ export default function ManagePosts() {
             </div>
           </div>
 
+          <Link
+            href="/profile"
+            className="flex items-center gap-2 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Users className="w-5 h-5" />
+            내 정보
+          </Link>
         </div>
       </header>
 

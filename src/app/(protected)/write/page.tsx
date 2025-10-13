@@ -6,6 +6,7 @@ import Link from 'next/link';
 import AdvancedNovelEditor, { AdvancedNovelEditorRef } from '@/components/editor/AdvancedNovelEditor';
 import { uploadImageToStorage, compressImage } from '@/lib/firebase/storage';
 import { savePostToFirestore, getBlogSettings, getPostById, updatePostInFirestore, changePostCategory, getAllBlogs } from '@/lib/firebase/posts';
+import { getTemplateById, getTemplatesByBlog, Template } from '@/lib/firebase/templates';
 import { Timestamp } from 'firebase/firestore';
 import {
   PenTool,
@@ -30,6 +31,7 @@ function WritePageContent() {
   const editPostId = searchParams.get('id');
   const editCategory = searchParams.get('category');
   const editBlogId = searchParams.get('blog');
+  const templateId = searchParams.get('template');
   const isEditMode = !!(editPostId && editCategory && editBlogId);
 
   const [postTitle, setPostTitle] = useState('');
@@ -55,8 +57,12 @@ function WritePageContent() {
   const [publishedPostUrl, setPublishedPostUrl] = useState('');
   const [showSpellCheck, setShowSpellCheck] = useState(false);
   const [featuredImage, setFeaturedImage] = useState('');
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [availableTemplates, setAvailableTemplates] = useState<Template[]>([]);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<AdvancedNovelEditorRef>(null);
+  const templateLoadedRef = useRef(false);
 
   // 블로그 목록 로드
   useEffect(() => {
@@ -110,6 +116,34 @@ function WritePageContent() {
 
     loadPostForEdit();
   }, [isEditMode, editBlogId, editCategory, editPostId]);
+
+  // 템플릿 로드
+  useEffect(() => {
+    const loadTemplate = async () => {
+      if (templateId && !isEditMode && !templateLoadedRef.current) {
+        console.log('🔄 템플릿 로드 시작:', templateId);
+        templateLoadedRef.current = true;
+        setIsLoading(true);
+        try {
+          const template = await getTemplateById('axi', templateId);
+          if (template) {
+            setPostContent(template.content);
+            toast.success(`"${template.title}" 템플릿이 적용되었습니다.`, { position: 'top-center'});
+          } else {
+            console.warn('⚠️ 템플릿을 찾을 수 없음');
+            toast.error('템플릿을 찾을 수 없습니다.');
+          }
+        } catch (error) {
+          console.error('❌ 템플릿 로드 실패:', error);
+          toast.error('템플릿을 불러오는데 실패했습니다.');
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadTemplate();
+  }, [templateId, isEditMode]);
 
   // 블로그 선택 시 카테고리 불러오기
   useEffect(() => {
@@ -231,15 +265,27 @@ function WritePageContent() {
 
   const handleSaveAsDraft = async () => {
     if (!postTitle.trim()) {
-      toast.error('제목을 입력해주세요', { position: 'top-center' });
+      toast.info('제목을 입력해주세요', { position: 'top-center' });
+      return;
+    }
+
+    // 에디터에서 최신 내용 가져오기
+    const editorContent = editorRef.current?.getHTML?.() || postContent;
+
+    if (!editorContent.trim() || editorContent === '<p></p>') {
+      toast.info('내용을 입력해주세요', { position: 'top-center' });
       return;
     }
     if (!selectedBlog.trim()) {
-      toast.error('블로그를 선택해주세요', { position: 'top-center' });
+      toast.info('블로그를 선택해주세요', { position: 'top-center' });
       return;
     }
     if (!category.trim()) {
-      toast.error('카테고리를 선택해주세요', { position: 'top-center' });
+      toast.info('카테고리를 선택해주세요', { position: 'top-center' });
+      return;
+    }
+    if (!featuredImage.trim()) {
+      toast.info('타이틀 이미지를 설정해주세요', { position: 'top-center' });
       return;
     }
 
@@ -249,18 +295,15 @@ function WritePageContent() {
         // 수정 모드: 업데이트
         console.log('💾 포스트 수정 저장 시작:', postTitle);
 
-        // 에디터에서 최신 내용 가져오기
-        let editorContent = editorRef.current?.getHTML?.() || postContent;
-
         // 스타일 인라인화 (클래스 기반 스타일을 인라인으로 변환)
-        editorContent = inlineStyles(editorContent);
+        const inlinedContent = inlineStyles(editorContent);
 
         // poll 데이터 추출 (여러 개)
-        const pollsData = extractPollsDataFromHTML(editorContent);
+        const pollsData = extractPollsDataFromHTML(inlinedContent);
 
         await updatePostInFirestore(selectedBlog, currentPostId, {
           title: postTitle,
-          content: editorContent || '<p>내용을 작성해주세요...</p>',
+          content: inlinedContent || '<p>내용을 작성해주세요...</p>',
           categories: [category],
           tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
           status: 'draft',
@@ -278,18 +321,15 @@ function WritePageContent() {
         // 새 글 모드: 생성
         console.log('💾 포스트 초안 저장 시작:', postTitle);
 
-        // 에디터에서 최신 내용 가져오기
-        let editorContent = editorRef.current?.getHTML?.() || postContent;
-
         // 스타일 인라인화 (클래스 기반 스타일을 인라인으로 변환)
-        editorContent = inlineStyles(editorContent);
+        const inlinedContent = inlineStyles(editorContent);
 
         // poll 데이터 추출 (여러 개)
-        const pollsData = extractPollsDataFromHTML(editorContent);
+        const pollsData = extractPollsDataFromHTML(inlinedContent);
 
         const postId = await savePostToFirestore(
           postTitle,
-          editorContent || '<p>내용을 작성해주세요...</p>',
+          inlinedContent || '<p>내용을 작성해주세요...</p>',
           selectedBlog,
           {
             category,
@@ -318,7 +358,7 @@ function WritePageContent() {
 
   const handlePublish = async () => {
     if (!postTitle.trim()) {
-      toast.error('제목을 입력해주세요', { position: 'top-center' });
+      toast.info('제목을 입력해주세요', { position: 'top-center' });
       return;
     }
 
@@ -326,15 +366,19 @@ function WritePageContent() {
     const editorContent = editorRef.current?.getHTML?.() || postContent;
 
     if (!editorContent.trim() || editorContent === '<p></p>') {
-      toast.error('내용을 입력해주세요', { position: 'top-center' });
+      toast.info('내용을 입력해주세요', { position: 'top-center' });
       return;
     }
     if (!selectedBlog.trim()) {
-      toast.error('블로그를 선택해주세요', { position: 'top-center' });
+      toast.info('블로그를 선택해주세요', { position: 'top-center' });
       return;
     }
     if (!category.trim()) {
-      toast.error('카테고리를 선택해주세요', { position: 'top-center' });
+      toast.info('카테고리를 선택해주세요', { position: 'top-center' });
+      return;
+    }
+    if (!featuredImage.trim()) {
+      toast.info('타이틀 이미지를 설정해주세요', { position: 'top-center' });
       return;
     }
 
@@ -564,6 +608,41 @@ function WritePageContent() {
     toast.success('타이틀 이미지가 설정되었습니다.');
   };
 
+  // 템플릿 모달 열기 시 템플릿 목록 로드
+  const handleOpenTemplateModal = async () => {
+    setShowTemplateModal(true);
+    setIsLoadingTemplates(true);
+    try {
+      const templates = await getTemplatesByBlog('axi');
+      setAvailableTemplates(templates);
+    } catch (error) {
+      console.error('템플릿 로드 실패:', error);
+      toast.error('템플릿을 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoadingTemplates(false);
+    }
+  };
+
+  // 템플릿 적용
+  const handleApplyTemplate = async (template: Template) => {
+    const hasContent = postContent && postContent !== '<p></p>';
+
+    if (hasContent) {
+      const confirmed = window.confirm(
+        `"${template.title}" 템플릿을 적용하시겠습니까?\n\n현재 작성 중인 본문 내용이 삭제되고 템플릿 내용으로 덮어쓰기됩니다.`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    // 템플릿 적용 (제목은 유지, 본문만 교체)
+    setPostContent(template.content);
+    setShowTemplateModal(false);
+    toast.success(`"${template.title}" 템플릿이 적용되었습니다.`, { position: 'top-center'});
+  };
+
   // 맞춤법 수정 적용
   const handleApplySpellFix = (original: string, suggestion: string) => {
     if (editorRef.current) {
@@ -594,6 +673,16 @@ function WritePageContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Toaster position="top-right" />
+      <style dangerouslySetInnerHTML={{__html: `
+        [data-sonner-toast][data-type="info"] {
+          background: white !important;
+          color: #3b82f6 !important;
+          border: 2px solid #3b82f6 !important;
+        }
+        [data-sonner-toast][data-type="info"] [data-icon] {
+          color: #3b82f6 !important;
+        }
+      `}} />
       
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4">
@@ -636,6 +725,13 @@ function WritePageContent() {
               AI 활성화
             </div>
             */}
+            <button
+              className="px-3 py-1 border rounded text-sm hover:bg-gray-50"
+              onClick={handleOpenTemplateModal}
+            >
+              <FileText className="w-4 h-4 inline mr-1" />
+              템플릿 가져오기
+            </button>
             <button
               className="px-3 py-1 border rounded text-sm hover:bg-gray-50"
               onClick={() => setShowSpellCheck(!showSpellCheck)}
@@ -723,7 +819,7 @@ function WritePageContent() {
                   <span>카테고리: {category}</span>
                 </div>
               </div>
-              
+
               <div className={isPreview ? 'preview-mode' : ''}>
                 <AdvancedNovelEditor
                   initialContent={postContent}
@@ -739,6 +835,10 @@ function WritePageContent() {
                 />
               </div>
               <style jsx>{`
+                :global(.ProseMirror) {
+                  max-height: 60vh;
+                  overflow-y: auto;
+                }
                 .preview-mode :global(.ProseMirror) {
                   pointer-events: none;
                   user-select: text;
@@ -829,133 +929,46 @@ function WritePageContent() {
               </div>
             </div>
 
-            {/* 미디어 */}
+            {/* 타이틀 이미지 */}
             <div className="bg-white rounded-lg border p-4">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <ImageIcon className="w-5 h-5" />
-                미디어
+                ⭐ 타이틀 이미지
               </h3>
-              
-              {/* 파일 업로드 영역 */}
-              <div 
-                data-upload-area
-                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                  dragActive 
-                    ? 'border-blue-400 bg-blue-50' 
-                    : 'border-gray-300 hover:border-gray-400'
-                } ${
-                  isImageUploading ? 'opacity-50 pointer-events-none' : ''
-                }`}
-                onDragEnter={handleDragEnter}
-                onDragLeave={handleDragLeave}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                onClick={handleFileSelect}
-                role="button"
-                tabIndex={0}
-              >
-                {isImageUploading ? (
-                  <>
-                    <Loader2 className="w-8 h-8 text-blue-600 mx-auto mb-2 animate-spin" />
-                    <p className="text-sm text-blue-600">이미지 업로드 중...</p>
-                  </>
-                ) : (
-                  <>
-                    <Upload className={`w-8 h-8 mx-auto mb-2 ${
-                      dragActive ? 'text-blue-600' : 'text-gray-400'
-                    }`} />
-                    <p className={`text-sm mb-2 ${
-                      dragActive ? 'text-blue-600' : 'text-gray-600'
-                    }`}>
-                      {dragActive ? '이미지를 놓으세요' : '이미지를 드래그하거나 클릭하여 업로드'}
-                    </p>
-                    <button 
-                      className="px-3 py-1 border rounded text-sm hover:bg-gray-50"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleFileSelect();
+              {featuredImage ? (
+                <>
+                  <div className="relative">
+                    <img
+                      src={featuredImage}
+                      alt="Featured"
+                      className="w-full h-auto rounded-lg border border-gray-200"
+                    />
+                    <button
+                      onClick={() => {
+                        setFeaturedImage('');
+                        toast.success('타이틀 이미지가 해제되었습니다.');
                       }}
+                      className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                      title="타이틀 이미지 해제"
                     >
-                      파일 선택
+                      <X className="w-4 h-4" />
                     </button>
-                  </>
-                )}
-              </div>
-              
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              
-              {/* 업로드된 이미지 목록 */}
-              {uploadedImages.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">업로드된 이미지</h4>
-                  <div className="space-y-2">
-                    {uploadedImages.map((image, index) => (
-                      <div key={index} className="flex items-center gap-2 p-2 border rounded hover:bg-gray-50">
-                        <img
-                          src={image.url}
-                          alt={image.name}
-                          className="w-10 h-10 object-cover rounded"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-gray-600 truncate" title={image.name}>
-                            {image.name}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => insertImageToEditor(image.url)}
-                          className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
-                          title="에디터에 삽입"
-                        >
-                          삽입
-                        </button>
-                        <button
-                          onClick={() => removeImage(index)}
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
-                          title="제거"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
                   </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    본문에서 이미지를 클릭하여 타이틀 이미지를 변경할 수 있습니다.
+                  </p>
+                </>
+              ) : (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                  <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-sm text-gray-600 mb-1 font-medium">
+                    타이틀 이미지가 설정되지 않았습니다
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    본문에서 이미지를 클릭하여 타이틀 이미지로 설정하세요
+                  </p>
                 </div>
               )}
             </div>
-
-            {/* 타이틀 이미지 */}
-            {featuredImage && (
-              <div className="bg-white rounded-lg border p-4">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  ⭐ 타이틀 이미지
-                </h3>
-                <div className="relative">
-                  <img
-                    src={featuredImage}
-                    alt="Featured"
-                    className="w-full h-auto rounded-lg border border-gray-200"
-                  />
-                  <button
-                    onClick={() => {
-                      setFeaturedImage('');
-                      toast.success('타이틀 이미지가 해제되었습니다.');
-                    }}
-                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
-                    title="타이틀 이미지 해제"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  본문에서 이미지를 클릭하여 타이틀 이미지를 변경할 수 있습니다.
-                </p>
-              </div>
-            )}
 
             {/* SEO 설정 */}
             <div className="bg-white rounded-lg border p-4">
@@ -1002,6 +1015,65 @@ function WritePageContent() {
           </div>
         </div>
       </div>
+
+      {/* 템플릿 선택 모달 */}
+      {showTemplateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold">템플릿 선택</h3>
+              <button
+                onClick={() => setShowTemplateModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              {isLoadingTemplates ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                </div>
+              ) : availableTemplates.length === 0 ? (
+                <div className="text-center py-12">
+                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    템플릿이 없습니다
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    프로필 페이지에서 템플릿을 먼저 생성해주세요
+                  </p>
+                  <Link
+                    href="/profile?tab=templates"
+                    className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    onClick={() => setShowTemplateModal(false)}
+                  >
+                    템플릿 관리로 이동
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {availableTemplates.map((template) => (
+                    <button
+                      key={template.id}
+                      onClick={() => handleApplyTemplate(template)}
+                      className="w-full text-left p-4 border rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                    >
+                      <h4 className="font-semibold text-gray-900 mb-1">
+                        {template.title}
+                      </h4>
+                      <p className="text-sm text-gray-500">
+                        {template.createdAt?.toDate?.().toLocaleDateString('ko-KR') || ''}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 발행된 포스트 미리보기 모달 */}
       {showPublishedPreview && (
