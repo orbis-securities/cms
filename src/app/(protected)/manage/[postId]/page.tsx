@@ -186,6 +186,25 @@ export default function PostDetailPage() {
     });
   }, [post]);
 
+  // 이미지 width 적용
+  useEffect(() => {
+    if (!post || !contentRef.current) return;
+
+    const container = contentRef.current;
+    const imageWrappers = container.querySelectorAll('.image-wrapper[data-width]');
+
+    imageWrappers.forEach((wrapper) => {
+      const width = wrapper.getAttribute('data-width');
+      const img = wrapper.querySelector('img');
+
+      if (img && width) {
+        img.style.width = `${width}px`;
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
+      }
+    });
+  }, [post]);
+
   const handleDelete = async () => {
     if (!post || !blogId) return;
 

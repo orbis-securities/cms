@@ -38,7 +38,7 @@ export const ResizableImage = Image.extend({
       width: {
         default: null,
         parseHTML: (element: HTMLElement) => {
-          const width = element.style.width || element.getAttribute('width');
+          const width = element.getAttribute('data-width') || element.getAttribute('width');
           return width ? parseInt(width) : null;
         },
         renderHTML: (attributes: any) => {
@@ -46,7 +46,7 @@ export const ResizableImage = Image.extend({
             return {};
           }
           return {
-            width: attributes.width,
+            'data-width': attributes.width,
           };
         },
       },
@@ -68,33 +68,19 @@ export const ResizableImage = Image.extend({
     const align = node.attrs.align || 'left';
     const width = node.attrs.width;
 
-    let imgStyle = 'max-width: 100%; height: auto; display: inline-block;';
-    if (width) {
-      imgStyle += ` width: ${width}px;`;
-    }
-
-    let wrapperStyle = 'display: block; max-width: 100%;';
-    if (align === 'center') {
-      wrapperStyle += ' text-align: center;';
-    } else if (align === 'right') {
-      wrapperStyle += ' text-align: right;';
-    } else {
-      wrapperStyle += ' text-align: left;';
-    }
+    // style 속성 제거 (class와 data 속성만 사용)
+    const { style, ...cleanAttributes } = HTMLAttributes;
 
     return [
       'div',
       {
-        style: wrapperStyle,
         'data-align': align,
+        'data-width': width || null,
         class: 'image-wrapper'
       },
       [
         'img',
-        {
-          ...HTMLAttributes,
-          style: imgStyle,
-        },
+        cleanAttributes,
       ],
     ];
   },

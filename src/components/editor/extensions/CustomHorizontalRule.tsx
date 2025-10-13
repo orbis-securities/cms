@@ -38,6 +38,10 @@ export const CustomHorizontalRule = HorizontalRule.extend({
     };
   },
 
+  renderHTML({ HTMLAttributes }) {
+    return ['hr', HTMLAttributes];
+  },
+
   addCommands() {
     return {
       setHorizontalRule: (attributes = {}) => ({ commands }: { commands: any }) => {

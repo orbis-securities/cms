@@ -29,14 +29,24 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
   isFeatured = false
 }) => {
   const [width, setWidth] = useState(currentWidth);
+  const [alignment, setAlignment] = useState(currentAlignment);
 
   useEffect(() => {
     setWidth(currentWidth);
   }, [currentWidth]);
 
+  useEffect(() => {
+    setAlignment(currentAlignment);
+  }, [currentAlignment]);
+
   const handleWidthChange = (newWidth: number) => {
     setWidth(newWidth);
     onResize(newWidth);
+  };
+
+  const handleAlignChange = (newAlign: 'left' | 'center' | 'right') => {
+    setAlignment(newAlign);
+    onAlign(newAlign);
   };
 
   if (!isVisible) return null;
@@ -111,9 +121,9 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         <label className="text-sm font-medium text-gray-700 mb-3 block">📐 정렬</label>
         <div className="flex gap-1">
           <button
-            onClick={() => onAlign('left')}
+            onClick={() => handleAlignChange('left')}
             className={`flex-1 p-2 rounded text-xs flex items-center justify-center gap-1 transition-colors ${
-              currentAlignment === 'left'
+              alignment === 'left'
                 ? 'bg-blue-100 text-blue-700 border border-blue-300'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
@@ -122,9 +132,9 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
             왼쪽
           </button>
           <button
-            onClick={() => onAlign('center')}
+            onClick={() => handleAlignChange('center')}
             className={`flex-1 p-2 rounded text-xs flex items-center justify-center gap-1 transition-colors ${
-              currentAlignment === 'center'
+              alignment === 'center'
                 ? 'bg-blue-100 text-blue-700 border border-blue-300'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
@@ -133,9 +143,9 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
             가운데
           </button>
           <button
-            onClick={() => onAlign('right')}
+            onClick={() => handleAlignChange('right')}
             className={`flex-1 p-2 rounded text-xs flex items-center justify-center gap-1 transition-colors ${
-              currentAlignment === 'right'
+              alignment === 'right'
                 ? 'bg-blue-100 text-blue-700 border border-blue-300'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}

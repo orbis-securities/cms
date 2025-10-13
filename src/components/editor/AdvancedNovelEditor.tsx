@@ -515,8 +515,8 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
           setSelectedImageNode(img);
 
           // 현재 정렬 상태 감지
-          const parentElement = img.parentElement;
-          const alignAttr = parentElement?.getAttribute('data-align') || 'left';
+          const container = img.closest('.image-resizer-container');
+          const alignAttr = container?.getAttribute('data-align') || 'left';
           setCurrentImageAlignment(alignAttr as 'left' | 'center' | 'right');
 
           setShowImageToolbar(true);

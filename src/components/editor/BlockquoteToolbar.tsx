@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { Editor } from '@tiptap/react';
 
@@ -17,8 +17,16 @@ export default function BlockquoteToolbar({
   onClose,
   currentAlign
 }: BlockquoteToolbarProps) {
-  const handleAlignChange = (align: 'left' | 'center' | 'right') => {
-    editor.chain().focus().updateAttributes('blockquote', { 'data-align': align }).run();
+  const [align, setAlign] = useState(currentAlign);
+
+  // prop이 변경되면 내부 상태도 업데이트
+  useEffect(() => {
+    setAlign(currentAlign);
+  }, [currentAlign]);
+
+  const handleAlignChange = (newAlign: 'left' | 'center' | 'right') => {
+    editor.chain().focus().updateAttributes('blockquote', { 'data-align': newAlign }).run();
+    setAlign(newAlign);
   };
 
   return (
@@ -34,7 +42,7 @@ export default function BlockquoteToolbar({
         <button
           onClick={() => handleAlignChange('left')}
           className={`p-2 rounded hover:bg-gray-100 ${
-            currentAlign === 'left' ? 'bg-blue-100 text-blue-600' : ''
+            align === 'left' ? 'bg-blue-100 text-blue-600' : ''
           }`}
           title="왼쪽 정렬"
         >
@@ -43,7 +51,7 @@ export default function BlockquoteToolbar({
         <button
           onClick={() => handleAlignChange('center')}
           className={`p-2 rounded hover:bg-gray-100 ${
-            currentAlign === 'center' ? 'bg-blue-100 text-blue-600' : ''
+            align === 'center' ? 'bg-blue-100 text-blue-600' : ''
           }`}
           title="가운데 정렬"
         >
@@ -52,7 +60,7 @@ export default function BlockquoteToolbar({
         <button
           onClick={() => handleAlignChange('right')}
           className={`p-2 rounded hover:bg-gray-100 ${
-            currentAlign === 'right' ? 'bg-blue-100 text-blue-600' : ''
+            align === 'right' ? 'bg-blue-100 text-blue-600' : ''
           }`}
           title="오른쪽 정렬"
         >

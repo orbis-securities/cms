@@ -7,6 +7,7 @@ declare module '@tiptap/core' {
       setBlockquoteStyle: (className: string) => ReturnType;
       setBlockquoteAlign: (align: string) => ReturnType;
       setBlockquoteWidth: (width: string) => ReturnType;
+      setBlockquoteFloat: (float: string) => ReturnType;
     };
   }
 }
@@ -17,13 +18,10 @@ export const CustomBlockquote = Blockquote.extend({
       ...this.parent?.(),
       class: {
         default: 'quote-style-1',
-        parseHTML: element => element.getAttribute('class'),
+        parseHTML: element => element.getAttribute('class') || 'quote-style-1',
         renderHTML: attributes => {
-          if (!attributes.class) {
-            return {};
-          }
           return {
-            class: attributes.class,
+            class: attributes.class || 'quote-style-1',
           };
         },
       },
@@ -45,7 +43,34 @@ export const CustomBlockquote = Blockquote.extend({
           };
         },
       },
+      'data-float': {
+        default: 'none',
+        parseHTML: element => element.getAttribute('data-float'),
+        renderHTML: attributes => {
+          return {
+            'data-float': attributes['data-float'] || 'none',
+          };
+        },
+      },
     };
+  },
+
+  renderHTML({ node, HTMLAttributes }) {
+    // style 속성 제거 (class 기반 스타일만 사용)
+    const { style, ...cleanAttributes } = HTMLAttributes;
+
+    // node의 attrs에서 직접 속성들을 가져와서 명시적으로 설정
+    return [
+      'blockquote',
+      {
+        ...cleanAttributes,
+        class: node.attrs.class || 'quote-style-1',
+        'data-align': node.attrs['data-align'] || 'center',
+        'data-width': node.attrs['data-width'] || '30%',
+        'data-float': node.attrs['data-float'] || 'none',
+      },
+      0
+    ];
   },
 
   addCommands() {
@@ -59,6 +84,9 @@ export const CustomBlockquote = Blockquote.extend({
       },
       setBlockquoteWidth: (width: string) => ({ commands }: { commands: ChainedCommands }) => {
         return commands.updateAttributes('blockquote', { 'data-width': width });
+      },
+      setBlockquoteFloat: (float: string) => ({ commands }: { commands: ChainedCommands }) => {
+        return commands.updateAttributes('blockquote', { 'data-float': float });
       },
     };
   },

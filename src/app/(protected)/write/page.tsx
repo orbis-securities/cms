@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import SpellCheckPanel from '@/components/editor/SpellCheckPanel';
-import { inlineStyles } from '@/lib/utils/htmlStyleInliner';
 
 function WritePageContent() {
   const searchParams = useSearchParams();
@@ -295,15 +294,12 @@ function WritePageContent() {
         // 수정 모드: 업데이트
         console.log('💾 포스트 수정 저장 시작:', postTitle);
 
-        // 스타일 인라인화 (클래스 기반 스타일을 인라인으로 변환)
-        const inlinedContent = inlineStyles(editorContent);
-
         // poll 데이터 추출 (여러 개)
-        const pollsData = extractPollsDataFromHTML(inlinedContent);
+        const pollsData = extractPollsDataFromHTML(editorContent);
 
         await updatePostInFirestore(selectedBlog, currentPostId, {
           title: postTitle,
-          content: inlinedContent || '<p>내용을 작성해주세요...</p>',
+          content: editorContent || '<p>내용을 작성해주세요...</p>',
           categories: [category],
           tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
           status: 'draft',
@@ -321,15 +317,12 @@ function WritePageContent() {
         // 새 글 모드: 생성
         console.log('💾 포스트 초안 저장 시작:', postTitle);
 
-        // 스타일 인라인화 (클래스 기반 스타일을 인라인으로 변환)
-        const inlinedContent = inlineStyles(editorContent);
-
         // poll 데이터 추출 (여러 개)
-        const pollsData = extractPollsDataFromHTML(inlinedContent);
+        const pollsData = extractPollsDataFromHTML(editorContent);
 
         const postId = await savePostToFirestore(
           postTitle,
-          inlinedContent || '<p>내용을 작성해주세요...</p>',
+          editorContent || '<p>내용을 작성해주세요...</p>',
           selectedBlog,
           {
             category,
@@ -382,9 +375,6 @@ function WritePageContent() {
       return;
     }
 
-    // 스타일 인라인화 (클래스 기반 스타일을 인라인으로 변환)
-    const inlinedContent = inlineStyles(editorContent);
-
     setIsPublishing(true);
     try {
       if (currentPostId) {
@@ -392,11 +382,11 @@ function WritePageContent() {
         console.log('🚀 포스트 수정 발행 시작:', postTitle);
 
         // poll 데이터 추출 (여러 개)
-        const pollsData = extractPollsDataFromHTML(inlinedContent);
+        const pollsData = extractPollsDataFromHTML(editorContent);
 
         await updatePostInFirestore(selectedBlog, currentPostId, {
           title: postTitle,
-          content: inlinedContent,
+          content: editorContent,
           categories: [category],
           tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
           status: 'published',
@@ -423,11 +413,11 @@ function WritePageContent() {
         console.log('🚀 포스트 발행 시작:', postTitle);
 
         // poll 데이터 추출 (여러 개)
-        const pollsData = extractPollsDataFromHTML(inlinedContent);
+        const pollsData = extractPollsDataFromHTML(editorContent);
 
         const postId = await savePostToFirestore(
           postTitle,
-          inlinedContent,
+          editorContent,
           selectedBlog,
           {
             category,
@@ -931,7 +921,7 @@ function WritePageContent() {
 
             {/* 타이틀 이미지 */}
             <div className="bg-white rounded-lg border p-4">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <h3 className="font-semibold flex items-center gap-2 mb-4">
                 ⭐ 타이틀 이미지
               </h3>
               {featuredImage ? (

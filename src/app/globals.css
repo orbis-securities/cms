@@ -66,6 +66,7 @@ body {
 
 .prose blockquote {
   margin: 16px 0;
+  padding: 24px 16px;
   position: relative;
   color: #374151;
   min-width: 30%;
@@ -213,6 +214,32 @@ body {
   @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-4;
 }
 
+/* 이미지 wrapper 스타일 - prose */
+.prose .image-wrapper {
+  display: block;
+  max-width: 100%;
+  margin: 0.5rem 0;
+}
+
+.prose .image-wrapper[data-align="left"] {
+  text-align: left;
+}
+
+.prose .image-wrapper[data-align="center"] {
+  text-align: center;
+}
+
+.prose .image-wrapper[data-align="right"] {
+  text-align: right;
+}
+
+.prose .image-wrapper img {
+  @apply rounded-lg shadow-sm;
+  display: inline-block;
+  max-width: 100%;
+  height: auto;
+}
+
 .prose img {
   @apply rounded-lg shadow-sm;
   display: inline-block;
@@ -302,7 +329,31 @@ body {
   margin-bottom: 0.5rem;
 }
 
-/* 이미지 정렬 스타일 */
+/* 이미지 wrapper 스타일 */
+.ProseMirror .image-wrapper {
+  display: block;
+  max-width: 100%;
+}
+
+.ProseMirror .image-wrapper[data-align="left"] {
+  text-align: left;
+}
+
+.ProseMirror .image-wrapper[data-align="center"] {
+  text-align: center;
+}
+
+.ProseMirror .image-wrapper[data-align="right"] {
+  text-align: right;
+}
+
+.ProseMirror .image-wrapper img {
+  display: inline-block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* 이미지 정렬 스타일 (에디터용 컨테이너) */
 .ProseMirror .image-resizer-container {
   display: block;
   max-width: 100%;

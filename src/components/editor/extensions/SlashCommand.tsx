@@ -176,7 +176,12 @@ export const getSuggestionItems = ({ query, editor, onImageUpload, onAIButtonCli
               .focus()
               .deleteRange(range)
               .toggleBlockquote()
-              .updateAttributes('blockquote', { class: 'quote-style-1' })
+              .updateAttributes('blockquote', {
+                class: 'quote-style-1',
+                'data-align': 'center',
+                'data-width': '30%',
+                'data-float': 'none'
+              })
               .run();
           },
         },
@@ -188,7 +193,12 @@ export const getSuggestionItems = ({ query, editor, onImageUpload, onAIButtonCli
               .focus()
               .deleteRange(range)
               .toggleBlockquote()
-              .updateAttributes('blockquote', { class: 'quote-style-2' })
+              .updateAttributes('blockquote', {
+                class: 'quote-style-2',
+                'data-align': 'center',
+                'data-width': '30%',
+                'data-float': 'none'
+              })
               .run();
           },
         },
@@ -200,7 +210,12 @@ export const getSuggestionItems = ({ query, editor, onImageUpload, onAIButtonCli
               .focus()
               .deleteRange(range)
               .toggleBlockquote()
-              .updateAttributes('blockquote', { class: 'quote-style-3' })
+              .updateAttributes('blockquote', {
+                class: 'quote-style-3',
+                'data-align': 'center',
+                'data-width': '30%',
+                'data-float': 'none'
+              })
               .run();
           },
         },
@@ -212,7 +227,12 @@ export const getSuggestionItems = ({ query, editor, onImageUpload, onAIButtonCli
               .focus()
               .deleteRange(range)
               .toggleBlockquote()
-              .updateAttributes('blockquote', { class: 'quote-style-4' })
+              .updateAttributes('blockquote', {
+                class: 'quote-style-4',
+                'data-align': 'center',
+                'data-width': '30%',
+                'data-float': 'none'
+              })
               .run();
           },
         },
@@ -224,7 +244,12 @@ export const getSuggestionItems = ({ query, editor, onImageUpload, onAIButtonCli
               .focus()
               .deleteRange(range)
               .toggleBlockquote()
-              .updateAttributes('blockquote', { class: 'quote-style-6' })
+              .updateAttributes('blockquote', {
+                class: 'quote-style-6',
+                'data-align': 'center',
+                'data-width': '30%',
+                'data-float': 'none'
+              })
               .run();
           },
         },
