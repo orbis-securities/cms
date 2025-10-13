@@ -17,12 +17,12 @@ import { TableHeader } from '@tiptap/extension-table-header';
 import Youtube from '@tiptap/extension-youtube';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { createLowlight } from 'lowlight';
-import { Dropcursor } from '@tiptap/extension-dropcursor';
-import { Gapcursor } from '@tiptap/extension-gapcursor';
 import TextAlign from '@tiptap/extension-text-align';
 import { ResizableImage } from './extensions/ResizableImage';
 import { CustomBlockquote } from './extensions/CustomBlockquote';
 import { CustomHorizontalRule } from './extensions/CustomHorizontalRule';
+import { MarketWidget } from './extensions/MarketWidget';
+import { PollExtension } from './extensions/PollExtension';
 import { DividerToolbarPortal } from './DividerToolbarPortal';
 import { SlashCommand, getSuggestionItems, renderItems } from './extensions/SlashCommand';
 
@@ -124,9 +124,12 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
         },
         blockquote: false, // 기본 blockquote 비활성화
         horizontalRule: false, // 기본 horizontalRule 비활성화
+        codeBlock: false, // 기본 codeBlock 비활성화 (CodeBlockLowlight 사용)
       }),
       CustomBlockquote,
       CustomHorizontalRule,
+      MarketWidget,
+      PollExtension,
       ResizableImage.configure({
         HTMLAttributes: {
           class: 'max-w-full h-auto cursor-pointer',
@@ -853,20 +856,20 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
 
         {/* AI 드롭다운 */}
         <AIDropdown
-          showAIDropdown={showAIDropdown}
-          setShowAIDropdown={setShowAIDropdown}
-          aiMode={aiMode}
-          selectedText={selectedText}
-          aiCommand={aiCommand}
-          setAiCommand={setAiCommand}
-          selectedBlog={selectedBlog}
-          availableBlogs={availableBlogs}
-          onBlogChange={onBlogChange}
-          onSelectedTextAI={handleSelectedTextAI}
-          onFullContentAI={handleFullContentAI}
-          showAICompletion={showAICompletion}
-          editor={editor}
-        />
+            showAIDropdown={showAIDropdown}
+            setShowAIDropdown={setShowAIDropdown}
+            aiMode={aiMode}
+            selectedText={selectedText}
+            aiCommand={aiCommand}
+            setAiCommand={setAiCommand}
+            selectedBlog={selectedBlog}
+            availableBlogs={availableBlogs}
+            onBlogChange={onBlogChange}
+            onSelectedTextAI={handleSelectedTextAI}
+            onFullContentAI={handleFullContentAI}
+            showAICompletion={showAICompletion}
+            editor={editor}
+          />
 
         {/* 에디터 영역 */}
         {editorMode === 'visual' ? (

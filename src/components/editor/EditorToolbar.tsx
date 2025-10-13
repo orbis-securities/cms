@@ -21,9 +21,14 @@ import {
   Minus,
   AlignLeft,
   AlignCenter,
-  AlignRight
+  AlignRight,
+  TrendingUp,
+  BarChart3
 } from 'lucide-react';
 import CustomEmojiPicker from './EmojiPicker';
+import SymbolSelectModal from './SymbolSelectModal';
+import PollConfigModal from './PollConfigModal';
+import { createRoot } from 'react-dom/client';
 // import ColorPalette from './ColorPalette';
 // import FontSelector from './FontSelector';
 
@@ -66,6 +71,8 @@ export default function EditorToolbar({
   const [showSymbolDropdown, setShowSymbolDropdown] = useState(false);
   const [showQuoteStyleDropdown, setShowQuoteStyleDropdown] = useState(false);
   const [showDividerDropdown, setShowDividerDropdown] = useState(false);
+  const [showMarketWidgetDropdown, setShowMarketWidgetDropdown] = useState(false);
+  const [showPollModal, setShowPollModal] = useState(false);
 
   // 최근 색상 불러오기 (모달 열 때)
   useEffect(() => {
@@ -117,6 +124,11 @@ export default function EditorToolbar({
         setShowDividerDropdown(false);
       }
 
+      // 시장 위젯 드롭다운 외부 클릭 시 닫기
+      if (showMarketWidgetDropdown && !target.closest('.market-widget-dropdown-container')) {
+        setShowMarketWidgetDropdown(false);
+      }
+
       // AI 드롭다운 외부 클릭 시 닫기
       // showAICompletion 대신 실제 AI 드롭다운 표시 상태를 확인해야 함
       // 일단 주석 처리 - AdvancedNovelEditor에서 처리하도록 함
@@ -127,7 +139,7 @@ export default function EditorToolbar({
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showTextFormattingDropdown, onTextFormattingClick, showTableDropdown, showEmojiPicker, showSymbolDropdown, showQuoteStyleDropdown, showDividerDropdown, showAICompletion, onAIButtonClick]);
+  }, [showTextFormattingDropdown, onTextFormattingClick, showTableDropdown, showEmojiPicker, showSymbolDropdown, showQuoteStyleDropdown, showDividerDropdown, showMarketWidgetDropdown, showPollModal, showAICompletion, onAIButtonClick]);
 
   // 모달 닫힐 때 최근 색상 업데이트
   useEffect(() => {
@@ -919,6 +931,126 @@ export default function EditorToolbar({
       >
         <ImageIcon className="w-4 h-4" />
       </button>
+
+      {/* 시장 위젯 */}
+      <div className="relative market-widget-dropdown-container">
+        <button
+          onClick={() => setShowMarketWidgetDropdown(!showMarketWidgetDropdown)}
+          className="p-2 rounded hover:bg-gray-100"
+          title="시장 위젯 삽입"
+        >
+          <TrendingUp className="w-4 h-4" />
+        </button>
+
+        {/* 시장 위젯 드롭다운 */}
+        {showMarketWidgetDropdown && (
+          <div className="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg py-1 z-20 w-48">
+            <button
+              onClick={() => {
+                if (editor) {
+                  // 모달 컨테이너 생성
+                  const modalContainer = document.createElement('div');
+                  document.body.appendChild(modalContainer);
+                  const root = createRoot(modalContainer);
+
+                  const handleClose = () => {
+                    root.unmount();
+                    setTimeout(() => {
+                      if (modalContainer.parentNode) {
+                        modalContainer.parentNode.removeChild(modalContainer);
+                      }
+                    }, 0);
+                  };
+
+                  const handleConfirm = (symbols: string[]) => {
+                    editor
+                      .chain()
+                      .focus()
+                      .insertMarketWidget({ type: 'coins', symbols })
+                      .run();
+                    handleClose();
+                  };
+
+                  root.render(
+                    React.createElement(SymbolSelectModal, {
+                      isOpen: true,
+                      onClose: handleClose,
+                      onConfirm: handleConfirm,
+                      type: 'coins',
+                    })
+                  );
+                }
+                setShowMarketWidgetDropdown(false);
+              }}
+              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors"
+            >
+              암호화폐
+            </button>
+            <button
+              onClick={() => {
+                if (editor) {
+                  // 모달 컨테이너 생성
+                  const modalContainer = document.createElement('div');
+                  document.body.appendChild(modalContainer);
+                  const root = createRoot(modalContainer);
+
+                  const handleClose = () => {
+                    root.unmount();
+                    setTimeout(() => {
+                      if (modalContainer.parentNode) {
+                        modalContainer.parentNode.removeChild(modalContainer);
+                      }
+                    }, 0);
+                  };
+
+                  const handleConfirm = (symbols: string[]) => {
+                    editor
+                      .chain()
+                      .focus()
+                      .insertMarketWidget({ type: 'exchanges', symbols })
+                      .run();
+                    handleClose();
+                  };
+
+                  root.render(
+                    React.createElement(SymbolSelectModal, {
+                      isOpen: true,
+                      onClose: handleClose,
+                      onConfirm: handleConfirm,
+                      type: 'exchanges',
+                    })
+                  );
+                }
+                setShowMarketWidgetDropdown(false);
+              }}
+              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors"
+            >
+              환율
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* 투표/설문조사 */}
+      <button
+        onClick={() => setShowPollModal(true)}
+        className="p-2 rounded hover:bg-gray-100"
+        title="투표/설문조사 삽입"
+      >
+        <BarChart3 className="w-4 h-4" />
+      </button>
+
+      {/* 투표 설정 모달 */}
+      <PollConfigModal
+        isOpen={showPollModal}
+        onClose={() => setShowPollModal(false)}
+        onConfirm={(config) => {
+          if (editor) {
+            (editor as any).chain().focus().insertPoll(config).run();
+          }
+          setShowPollModal(false);
+        }}
+      />
     </div>
   );
 }

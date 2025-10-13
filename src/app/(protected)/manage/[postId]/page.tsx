@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Tag, Eye, Edit, Trash2, Loader2 } from 'lucide-react';
 import { getPostById, deletePostFromFirestore } from '@/lib/firebase/posts';
 import { Post } from '@/types';
 import { toast, Toaster } from 'sonner';
+import { createRoot } from 'react-dom/client';
+import { MarketWidgetView } from '@/components/editor/MarketWidgetView';
+import { PollView } from '@/components/editor/PollView';
+import React from 'react';
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -20,6 +24,7 @@ export default function PostDetailPage() {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadPost = async () => {
@@ -46,6 +51,103 @@ export default function PostDetailPage() {
 
     loadPost();
   }, [blogId, postId]);
+
+  // 시장 위젯을 React 컴포넌트로 렌더링
+  useEffect(() => {
+    if (!post || !contentRef.current) return;
+
+    const container = contentRef.current;
+    const marketWidgets = container.querySelectorAll('[data-type="market-widget"]');
+
+    marketWidgets.forEach((widgetNode) => {
+      const type = widgetNode.getAttribute('data-market-type') as 'coins' | 'exchanges';
+      const symbolsStr = widgetNode.getAttribute('data-symbols');
+      const symbols = symbolsStr ? JSON.parse(symbolsStr) : null;
+
+      // React 컴포넌트를 렌더링할 컨테이너 생성
+      const reactContainer = document.createElement('div');
+      widgetNode.replaceWith(reactContainer);
+
+      // React 컴포넌트 렌더링
+      const root = createRoot(reactContainer);
+      root.render(
+        React.createElement(MarketWidgetView, {
+          type: type || 'coins',
+          symbols: symbols,
+        })
+      );
+    });
+  }, [post]);
+
+  // 투표를 React 컴포넌트로 렌더링
+  useEffect(() => {
+    if (!post || !contentRef.current || !blogId || !postId) return;
+
+    const container = contentRef.current;
+    const pollNodes = container.querySelectorAll('[data-type="poll"]');
+
+    pollNodes.forEach((pollNode) => {
+      const pollId = pollNode.getAttribute('data-poll-id') || '';
+
+      // HTML 속성 대신 post.polls 배열에서 데이터 사용
+      const pollData = post.polls?.find(p => p.pollId === pollId);
+
+      if (pollData) {
+        // React 컴포넌트를 렌더링할 컨테이너 생성
+        const reactContainer = document.createElement('div');
+        pollNode.replaceWith(reactContainer);
+
+        // React 컴포넌트 렌더링 - post.polls 데이터 사용
+        const root = createRoot(reactContainer);
+        root.render(
+          React.createElement(PollView, {
+            pollId: pollData.pollId,
+            question: pollData.question,
+            options: pollData.options,
+            allowMultiple: pollData.allowMultiple,
+            totalVotes: pollData.totalVotes,
+            blogId: blogId as string,
+            postId: postId as string,
+          })
+        );
+      } else {
+        // post.polls 데이터가 없는 경우 HTML에서 파싱 (하위 호환성)
+        const question = pollNode.getAttribute('data-question') || '';
+        const optionsStr = pollNode.getAttribute('data-options');
+        const optionsRaw = optionsStr ? JSON.parse(optionsStr) : [];
+        const allowMultiple = pollNode.getAttribute('data-allow-multiple') === 'true';
+
+        // string[] 형식을 { text: string; votes: number }[] 형식으로 변환
+        const options = optionsRaw.map((opt: string | { text: string; votes: number }) => {
+          if (typeof opt === 'string') {
+            return { text: opt, votes: 0 };
+          }
+          return opt;
+        });
+
+        // totalVotes 계산 (votes 합계를 사용)
+        const totalVotes = options.reduce((sum: number, opt: { text: string; votes: number }) => sum + opt.votes, 0);
+
+        // React 컴포넌트를 렌더링할 컨테이너 생성
+        const reactContainer = document.createElement('div');
+        pollNode.replaceWith(reactContainer);
+
+        // React 컴포넌트 렌더링
+        const root = createRoot(reactContainer);
+        root.render(
+          React.createElement(PollView, {
+            pollId,
+            question,
+            options,
+            allowMultiple,
+            totalVotes,
+            blogId: blogId as string,
+            postId: postId as string,
+          })
+        );
+      }
+    });
+  }, [post, blogId, postId]);
 
   const handleDelete = async () => {
     if (!post || !blogId) return;
@@ -145,6 +247,17 @@ export default function PostDetailPage() {
             </Link>
 
             <div className="flex items-center gap-2">
+              {blogId === 'axi' && (
+                <a
+                  href="https://mmtblog.vercel.app/posts/1"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 text-green-600 border border-green-600 rounded-lg hover:bg-green-50 transition-colors flex items-center gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  AXI 페이지
+                </a>
+              )}
               <Link
                 href={`/write?id=${post.id}&category=${post.categories[0]}&blog=${blogId}`}
                 className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-2"
@@ -222,6 +335,7 @@ export default function PostDetailPage() {
           {/* Post Content */}
           <div className="p-8">
             <div
+              ref={contentRef}
               className="prose max-w-none"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />

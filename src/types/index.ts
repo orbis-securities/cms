@@ -42,6 +42,14 @@ export interface SEOSettings {
   };
 }
 
+export interface PostPoll {
+  pollId: string;
+  question: string;
+  options: { text: string; votes: number }[];
+  allowMultiple: boolean;
+  totalVotes: number;
+}
+
 export interface Post {
   id: string;
   blogId: string;
@@ -62,6 +70,7 @@ export interface Post {
   viewCount: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  polls?: PostPoll[];
 }
 
 export interface PostSEO {

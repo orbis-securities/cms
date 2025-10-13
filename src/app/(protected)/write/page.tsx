@@ -169,6 +169,65 @@ function WritePageContent() {
     setPostContent(content);
   };
 
+  // HTML에서 poll 데이터 추출 (여러 개)
+  const extractPollsDataFromHTML = (html: string) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const pollElements = doc.querySelectorAll('[data-type="poll"]');
+
+    console.log("pollElements 개수:", pollElements.length);
+
+    if (pollElements.length === 0) {
+      return [];
+    }
+
+    const polls: Array<{
+      pollId: string;
+      question: string;
+      options: { text: string; votes: number }[];
+      allowMultiple: boolean;
+      totalVotes: number;
+    }> = [];
+
+    pollElements.forEach((pollElement) => {
+      const pollId = pollElement.getAttribute('data-poll-id') || '';
+      const question = pollElement.getAttribute('data-question') || '';
+      const optionsStr = pollElement.getAttribute('data-options');
+      const allowMultiple = pollElement.getAttribute('data-allow-multiple') === 'true';
+
+      let options: { text: string; votes: number }[] = [];
+      try {
+        const parsed = optionsStr ? JSON.parse(optionsStr) : [];
+        // PollExtension에서 string[] 형식으로 저장되므로, { text, votes } 형식으로 변환
+        options = parsed.map((opt: string | { text: string; votes: number }) => {
+          if (typeof opt === 'string') {
+            return { text: opt, votes: 0 };
+          }
+          return opt;
+        });
+      } catch (error) {
+        console.error('Poll 옵션 파싱 실패:', error);
+        options = [];
+      }
+
+      // 새로 등록되는 poll은 항상 totalVotes = 0으로 초기화
+      const totalVotes = 0;
+
+      if (pollId) {
+        polls.push({
+          pollId,
+          question,
+          options,
+          allowMultiple,
+          totalVotes
+        });
+      }
+    });
+
+    console.log("추출된 polls:", polls);
+    return polls;
+  };
+
   const handleSaveAsDraft = async () => {
     if (!postTitle.trim()) {
       toast.error('제목을 입력해주세요', { position: 'top-center' });
@@ -192,6 +251,9 @@ function WritePageContent() {
         // 에디터에서 최신 내용 가져오기
         const editorContent = editorRef.current?.getHTML?.() || postContent;
 
+        // poll 데이터 추출 (여러 개)
+        const pollsData = extractPollsDataFromHTML(editorContent);
+
         await updatePostInFirestore(selectedBlog, currentPostId, {
           title: postTitle,
           content: editorContent || '<p>내용을 작성해주세요...</p>',
@@ -203,7 +265,8 @@ function WritePageContent() {
             metaTitle: metaTitle || postTitle,
             metaDescription: metaDescription,
             keywords: keywords.split(',').map(keyword => keyword.trim()).filter(Boolean),
-          }
+          },
+          ...(pollsData.length > 0 && { polls: pollsData })
         });
 
         toast.success('포스트가 수정되었습니다! 📝');
@@ -213,6 +276,9 @@ function WritePageContent() {
 
         // 에디터에서 최신 내용 가져오기
         const editorContent = editorRef.current?.getHTML?.() || postContent;
+
+        // poll 데이터 추출 (여러 개)
+        const pollsData = extractPollsDataFromHTML(editorContent);
 
         const postId = await savePostToFirestore(
           postTitle,
@@ -226,7 +292,8 @@ function WritePageContent() {
             keywords: keywords.split(',').map(keyword => keyword.trim()).filter(Boolean),
             status: 'draft',
             featuredImage: featuredImage
-          }
+          },
+          pollsData
         );
 
         console.log('✅ 초안 저장 완료:', postId);
@@ -270,6 +337,9 @@ function WritePageContent() {
         // 수정 모드: 업데이트
         console.log('🚀 포스트 수정 발행 시작:', postTitle);
 
+        // poll 데이터 추출 (여러 개)
+        const pollsData = extractPollsDataFromHTML(editorContent);
+
         await updatePostInFirestore(selectedBlog, currentPostId, {
           title: postTitle,
           content: editorContent,
@@ -282,7 +352,8 @@ function WritePageContent() {
             metaTitle: metaTitle || postTitle,
             metaDescription: metaDescription,
             keywords: keywords.split(',').map(keyword => keyword.trim()).filter(Boolean),
-          }
+          },
+          ...(pollsData.length > 0 && { polls: pollsData })
         });
 
         // axi 블로그일 때만 미리보기 표시
@@ -297,6 +368,9 @@ function WritePageContent() {
         // 새 글 모드: 생성
         console.log('🚀 포스트 발행 시작:', postTitle);
 
+        // poll 데이터 추출 (여러 개)
+        const pollsData = extractPollsDataFromHTML(editorContent);
+
         const postId = await savePostToFirestore(
           postTitle,
           editorContent,
@@ -309,7 +383,8 @@ function WritePageContent() {
             keywords: keywords.split(',').map(keyword => keyword.trim()).filter(Boolean),
             status: 'published',
             featuredImage: featuredImage
-          }
+          },
+          pollsData
         );
 
         console.log('✅ 포스트 발행 완료:', postId);
@@ -639,30 +714,37 @@ function WritePageContent() {
                 </div>
               </div>
               
-              <div>
-                {isPreview ? (
-                  <div className="p-6 min-h-[600px]">
-                    <h1 className="text-2xl font-bold mb-4">{postTitle || '제목 없음'}</h1>
-                    <div 
-                      className="prose max-w-none"
-                      dangerouslySetInnerHTML={{ __html: postContent || '<p>내용을 입력해주세요...</p>' }}
-                    />
-                  </div>
-                ) : (
-                  <AdvancedNovelEditor
-                    initialContent={postContent}
-                    onSave={handleSave}
-                    blogId="demo-blog"
-                    selectedBlog={selectedBlog}
-                    availableBlogs={availableBlogs}
-                    onBlogChange={setSelectedBlog}
-                    getDesignSettings={getBlogSettings}
-                    onSetFeatured={handleSetFeatured}
-                    featuredImage={featuredImage}
-                    ref={editorRef}
-                  />
-                )}
+              <div className={isPreview ? 'preview-mode' : ''}>
+                <AdvancedNovelEditor
+                  initialContent={postContent}
+                  onSave={handleSave}
+                  blogId="demo-blog"
+                  selectedBlog={selectedBlog}
+                  availableBlogs={availableBlogs}
+                  onBlogChange={setSelectedBlog}
+                  getDesignSettings={getBlogSettings}
+                  onSetFeatured={handleSetFeatured}
+                  featuredImage={featuredImage}
+                  ref={editorRef}
+                />
               </div>
+              <style jsx>{`
+                .preview-mode :global(.ProseMirror) {
+                  pointer-events: none;
+                  user-select: text;
+                }
+                .preview-mode :global(.border-b.p-2.flex.items-center),
+                .preview-mode :global(div[class*="flex items-center justify-between"]),
+                .preview-mode :global(.image-toolbar-panel),
+                .preview-mode :global(.table-editor-panel),
+                .preview-mode :global(.blockquote-toolbar-panel),
+                .preview-mode :global(.divider-toolbar-portal),
+                .preview-mode :global(.ai-dropdown-container),
+                .preview-mode :global(div[class*="mt-4 p-4"]:has(h4)),
+                .preview-mode :global(div[class*="mt-4 p-3"]:has(strong)) {
+                  display: none !important;
+                }
+              `}</style>
             </div>
           </div>
 

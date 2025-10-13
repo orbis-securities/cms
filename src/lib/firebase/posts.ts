@@ -22,7 +22,14 @@ export async function savePostToFirestore(
     keywords?: string[];
     status: PostStatus;
     featuredImage?: string;
-  }
+  },
+  polls?: Array<{
+    pollId: string;
+    question: string;
+    options: { text: string; votes: number }[];
+    allowMultiple: boolean;
+    totalVotes: number;
+  }>
 ): Promise<string> {
   try {
     // Firestore 연결 상태 확인
@@ -59,7 +66,10 @@ export async function savePostToFirestore(
         metaDescription: metadata.metaDescription || generateExcerpt(content),
         keywords: metadata.keywords || [],
         ogImage: extractFirstImage(content),
-      }
+      },
+      ...(polls && polls.length > 0 && {
+        polls: polls
+      })
     };
 
     // Collection Group 구조로 저장: blogs/{blogId}/posts/{timestamp}
@@ -665,3 +675,4 @@ function extractFirstImage(content: string): string | null {
   const match = content.match(imgRegex);
   return match ? match[1] : null;
 }
+

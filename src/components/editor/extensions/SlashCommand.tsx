@@ -3,6 +3,9 @@ import Suggestion from '@tiptap/suggestion';
 import { ReactRenderer } from '@tiptap/react';
 import tippy, { Instance as TippyInstance } from 'tippy.js';
 import { CommandsList, CommandItem } from '../CommandsList';
+import { createRoot } from 'react-dom/client';
+import React from 'react';
+import SymbolSelectModal from '../SymbolSelectModal';
 
 export const SlashCommand = Extension.create({
   name: 'slashCommand',
@@ -221,6 +224,94 @@ export const getSuggestionItems = ({ query, editor, onImageUpload, onAIButtonCli
               .toggleBlockquote()
               .updateAttributes('blockquote', { class: 'quote-style-6' })
               .run();
+          },
+        },
+      ],
+    },
+    {
+      title: '시장 위젯',
+      icon: '📊',
+      description: '실시간 코인/환율 정보를 표시합니다',
+      command: ({ editor, range }: { editor: any; range: any }) => {
+        // 서브메뉴가 있으므로 기본 동작 없음
+      },
+      submenu: [
+        {
+          title: '암호화폐',
+          command: ({ editor, range }: { editor: any; range: any }) => {
+            editor.chain().focus().deleteRange(range).run();
+
+            // 모달 컨테이너 생성
+            const modalContainer = document.createElement('div');
+            document.body.appendChild(modalContainer);
+            const root = createRoot(modalContainer);
+
+            const handleClose = () => {
+              root.unmount();
+              // DOM에서 안전하게 제거
+              setTimeout(() => {
+                if (modalContainer.parentNode) {
+                  modalContainer.parentNode.removeChild(modalContainer);
+                }
+              }, 0);
+            };
+
+            const handleConfirm = (symbols: string[]) => {
+              editor
+                .chain()
+                .focus()
+                .insertMarketWidget({ type: 'coins', symbols })
+                .run();
+              handleClose();
+            };
+
+            root.render(
+              React.createElement(SymbolSelectModal, {
+                isOpen: true,
+                onClose: handleClose,
+                onConfirm: handleConfirm,
+                type: 'coins',
+              })
+            );
+          },
+        },
+        {
+          title: '환율',
+          command: ({ editor, range }: { editor: any; range: any }) => {
+            editor.chain().focus().deleteRange(range).run();
+
+            // 모달 컨테이너 생성
+            const modalContainer = document.createElement('div');
+            document.body.appendChild(modalContainer);
+            const root = createRoot(modalContainer);
+
+            const handleClose = () => {
+              root.unmount();
+              // DOM에서 안전하게 제거
+              setTimeout(() => {
+                if (modalContainer.parentNode) {
+                  modalContainer.parentNode.removeChild(modalContainer);
+                }
+              }, 0);
+            };
+
+            const handleConfirm = (symbols: string[]) => {
+              editor
+                .chain()
+                .focus()
+                .insertMarketWidget({ type: 'exchanges', symbols })
+                .run();
+              handleClose();
+            };
+
+            root.render(
+              React.createElement(SymbolSelectModal, {
+                isOpen: true,
+                onClose: handleClose,
+                onConfirm: handleConfirm,
+                type: 'exchanges',
+              })
+            );
           },
         },
       ],
