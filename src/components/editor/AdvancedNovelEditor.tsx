@@ -441,7 +441,14 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
   // Ref 노출
   useImperativeHandle(ref, () => ({
     chain: () => editor?.chain(),
-    getHTML: () => editor?.getHTML() || '',
+    getHTML: () => {
+      const content = editor?.getHTML() || '';
+      // 이미 최상위 div로 감싸져 있지 않은 경우에만 추가
+      if (!content.trim().startsWith('<div style="max-width: 100%;">')) {
+        return `<div style="max-width: 100%;">${content}</div>`;
+      }
+      return content;
+    },
     clearContent: () => editor?.chain().clearContent().run()
   }), [editor]);
 
