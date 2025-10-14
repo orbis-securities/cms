@@ -15,7 +15,7 @@ import {
   Tag,
   Users
 } from 'lucide-react';
-import { getPostsByBlog, getAllPostsByBlog, getPostsByCategory, getBlogSettings, deletePostFromFirestore, getAllBlogs } from '@/lib/firebase/posts';
+import { getPostsByBlog, getAllPostsByBlog, getPostsByCategory, getBlogSettings, deletePostFromFirestore, getAllBlogs, Category } from '@/lib/firebase/posts';
 import { Post } from '@/types';
 import { toast, Toaster } from 'sonner';
 
@@ -28,7 +28,7 @@ export default function ManagePosts() {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
   const [availableBlogs, setAvailableBlogs] = useState<{ blogId: string, displayName: string }[]>([]);
 
   const postsPerPage = 10;
@@ -260,11 +260,13 @@ export default function ManagePosts() {
                 disabled={!selectedBlog || availableCategories.length === 0}
               >
                 <option value="">전체 카테고리</option>
-                {availableCategories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
+                {availableCategories
+                  .filter(category => category.status === 'Y')
+                  .map((category) => (
+                    <option key={category.name} value={category.name}>
+                      {category.name}
+                    </option>
+                  ))}
               </select>
             </div>
 

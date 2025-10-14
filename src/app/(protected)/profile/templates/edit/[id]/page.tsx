@@ -26,7 +26,7 @@ export default function EditTemplatePage() {
 
       setIsLoading(true);
       try {
-        const template = await getTemplateById('axi', templateId);
+        const template = await getTemplateById(templateId);
 
         if (template) {
           setTemplateTitle(template.title);
@@ -69,7 +69,7 @@ export default function EditTemplatePage() {
     setIsSaving(true);
     try {
       // Firebase에 템플릿 수정
-      await updateTemplateInFirestore('axi', templateId, {
+      await updateTemplateInFirestore(templateId, {
         title: templateTitle,
         content: editorContent,
       });

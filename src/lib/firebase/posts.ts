@@ -15,6 +15,7 @@ export async function savePostToFirestore(
   content: string,
   blogId: string,
   metadata: {
+    description?: string;
     category: string;
     tags: string[];
     metaTitle?: string;
@@ -46,6 +47,7 @@ export async function savePostToFirestore(
 
     const postData: Omit<Post, 'id'> = {
       title: title.trim(),
+      description: metadata.description || '',
       content: content.trim(),
       excerpt: generateExcerpt(content),
       blogId,
@@ -171,10 +173,10 @@ export async function getAllPostsByBlog(blogId: string): Promise<Post[]> {
     // 각 카테고리별로 포스트 조회
     for (const category of settings.categories) {
       try {
-        const categoryResult = await getPostsByCategory(blogId, category, 1000); // 카테고리당 최대 1000개
+        const categoryResult = await getPostsByCategory(blogId, category.name, 1000); // 카테고리당 최대 1000개
         allPosts.push(...categoryResult.posts);
       } catch (error) {
-        console.warn(`카테고리 ${category} 조회 실패:`, error);
+        console.warn(`카테고리 ${category.name} 조회 실패:`, error);
         // 특정 카테고리 실패해도 계속 진행
       }
     }
@@ -321,7 +323,7 @@ export async function getPostsByTag(
     // 각 카테고리별로 태그가 포함된 포스트 조회
     for (const category of settings.categories) {
       try {
-        const postsRef = collection(db, blogId, 'posts', category);
+        const postsRef = collection(db, blogId, 'posts', category.name);
         const q = query(
           postsRef,
           where('status', '==', 'published'),
@@ -336,7 +338,7 @@ export async function getPostsByTag(
           } as Post);
         });
       } catch (error) {
-        console.warn(`카테고리 ${category}에서 태그 검색 실패:`, error);
+        console.warn(`카테고리 ${category.name}에서 태그 검색 실패:`, error);
         // 특정 카테고리 실패해도 계속 진행
       }
     }
@@ -361,6 +363,12 @@ export async function getPostsByTag(
     console.error('❌ 태그별 포스트 조회 실패:', error);
     throw error;
   }
+}
+
+export interface Category {
+  name: string;
+  description: string;
+  status: 'Y' | 'N';
 }
 
 export interface BlogDesignSettings {
@@ -392,7 +400,7 @@ export interface BlogDesignSettings {
  * 블로그 설정 가져오기 (카테고리, 디자인 등)
  */
 export async function getBlogSettings(blogId: string): Promise<{
-  categories: string[];
+  categories: Category[];
   design?: BlogDesignSettings;
 } | null> {
   try {
@@ -435,7 +443,7 @@ export async function getBlogSettings(blogId: string): Promise<{
 export async function saveBlogSettings(
   blogId: string,
   settings: {
-    categories: string[];
+    categories: Category[];
     design?: BlogDesignSettings;
   }
 ): Promise<void> {
@@ -462,23 +470,38 @@ export async function saveBlogSettings(
  * 기본 블로그 설정
  */
 function getDefaultBlogSettings(blogId: string): {
-  categories: string[];
+  categories: Category[];
   design: BlogDesignSettings;
 } {
   switch (blogId) {
     case 'axi':
       return {
-        categories: ['시장 분석', '거래 전략', '경제 뉴스', '테크니컬 분석', '투자 팁'],
+        categories: [
+          { name: '시장 분석', description: '금융 시장 동향 및 분석', status: 'Y' },
+          { name: '거래 전략', description: '효과적인 거래 전략 및 팁', status: 'Y' },
+          { name: '경제 뉴스', description: '주요 경제 뉴스 및 이슈', status: 'Y' },
+          { name: '테크니컬 분석', description: '차트 및 기술적 분석', status: 'Y' },
+          { name: '투자 팁', description: '투자 관련 유용한 정보', status: 'Y' }
+        ],
         design: getDefaultDesignSettings('axi')
       };
     case 'orbisLanding':
       return {
-        categories: ['회사 소식', '제품 업데이트', '고객 사례', '기술 블로그', '이벤트'],
+        categories: [
+          { name: '회사 소식', description: '회사의 최신 소식', status: 'Y' },
+          { name: '제품 업데이트', description: '제품 업데이트 및 새로운 기능', status: 'Y' },
+          { name: '고객 사례', description: '고객 성공 사례', status: 'Y' },
+          { name: '기술 블로그', description: '기술 관련 인사이트', status: 'Y' },
+          { name: '이벤트', description: '이벤트 및 행사 정보', status: 'Y' }
+        ],
         design: getDefaultDesignSettings('orbisLanding')
       };
     default:
       return {
-        categories: ['일반', '공지사항'],
+        categories: [
+          { name: '일반', description: '일반 게시물', status: 'Y' },
+          { name: '공지사항', description: '중요 공지사항', status: 'Y' }
+        ],
         design: getDefaultDesignSettings('default')
       };
   }

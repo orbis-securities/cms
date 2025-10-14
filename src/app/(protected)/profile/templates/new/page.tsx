@@ -38,8 +38,7 @@ export default function NewTemplatePage() {
       // Firebase에 템플릿 저장
       const templateId = await saveTemplateToFirestore(
         templateTitle,
-        editorContent,
-        'axi'
+        editorContent
       );
 
       console.log('✅ 템플릿 저장 완료:', templateId);

@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import AdvancedNovelEditor, { AdvancedNovelEditorRef } from '@/components/editor/AdvancedNovelEditor';
 import { uploadImageToStorage, compressImage } from '@/lib/firebase/storage';
-import { savePostToFirestore, getBlogSettings, getPostById, updatePostInFirestore, changePostCategory, getAllBlogs } from '@/lib/firebase/posts';
+import { savePostToFirestore, getBlogSettings, getPostById, updatePostInFirestore, changePostCategory, getAllBlogs, Category } from '@/lib/firebase/posts';
 import { getTemplateById, getTemplatesByBlog, Template } from '@/lib/firebase/templates';
 import { Timestamp } from 'firebase/firestore';
 import {
@@ -34,6 +34,7 @@ function WritePageContent() {
   const isEditMode = !!(editPostId && editCategory && editBlogId);
 
   const [postTitle, setPostTitle] = useState('');
+  const [postDescription, setPostDescription] = useState('');
   const [postContent, setPostContent] = useState('');
   const [isPreview, setIsPreview] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<{url: string, name: string}[]>([]);
@@ -45,7 +46,7 @@ function WritePageContent() {
   const [category, setCategory] = useState(editCategory || '');
   const [originalCategory, setOriginalCategory] = useState(editCategory || '');
   const [tags, setTags] = useState('');
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
   const [availableBlogs, setAvailableBlogs] = useState<{ blogId: string, displayName: string }[]>([]);
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
@@ -93,6 +94,7 @@ function WritePageContent() {
           if (post) {
             console.log('📝 포스트 데이터 설정 중...');
             setPostTitle(post.title);
+            setPostDescription(post.description || '');
             setPostContent(post.content);
             setTags(post.tags?.join(', ') || '');
             setMetaTitle(post.seo?.metaTitle || '');
@@ -124,7 +126,7 @@ function WritePageContent() {
         templateLoadedRef.current = true;
         setIsLoading(true);
         try {
-          const template = await getTemplateById('axi', templateId);
+          const template = await getTemplateById(templateId);
           if (template) {
             setPostContent(template.content);
             toast.success(`"${template.title}" 템플릿이 적용되었습니다.`, { position: 'top-center'});
@@ -154,7 +156,7 @@ function WritePageContent() {
             setAvailableCategories(settings.categories);
             // 수정 모드가 아닐 때만 첫 번째 카테고리를 기본값으로 설정
             if (settings.categories.length > 0 && !category && !isEditMode) {
-              setCategory(settings.categories[0]);
+              setCategory(settings.categories[0].name);
             }
           }
         } catch (error) {
@@ -267,6 +269,10 @@ function WritePageContent() {
       toast.info('제목을 입력해주세요', { position: 'top-center' });
       return;
     }
+    if (!postDescription.trim()) {
+      toast.info('설명을 입력해주세요', { position: 'top-center' });
+      return;
+    }
 
     // 에디터에서 최신 내용 가져오기
     const editorContent = editorRef.current?.getHTML?.() || postContent;
@@ -299,6 +305,7 @@ function WritePageContent() {
 
         await updatePostInFirestore(selectedBlog, currentPostId, {
           title: postTitle,
+          description: postDescription,
           content: editorContent || '<p>내용을 작성해주세요...</p>',
           categories: [category],
           tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
@@ -325,6 +332,7 @@ function WritePageContent() {
           editorContent || '<p>내용을 작성해주세요...</p>',
           selectedBlog,
           {
+            description: postDescription,
             category,
             tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
             metaTitle: metaTitle || postTitle,
@@ -352,6 +360,10 @@ function WritePageContent() {
   const handlePublish = async () => {
     if (!postTitle.trim()) {
       toast.info('제목을 입력해주세요', { position: 'top-center' });
+      return;
+    }
+    if (!postDescription.trim()) {
+      toast.info('설명을 입력해주세요', { position: 'top-center' });
       return;
     }
 
@@ -386,6 +398,7 @@ function WritePageContent() {
 
         await updatePostInFirestore(selectedBlog, currentPostId, {
           title: postTitle,
+          description: postDescription,
           content: editorContent,
           categories: [category],
           tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
@@ -420,6 +433,7 @@ function WritePageContent() {
           editorContent,
           selectedBlog,
           {
+            description: postDescription,
             category,
             tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
             metaTitle: metaTitle || postTitle,
@@ -603,7 +617,7 @@ function WritePageContent() {
     setShowTemplateModal(true);
     setIsLoadingTemplates(true);
     try {
-      const templates = await getTemplatesByBlog('axi');
+      const templates = await getTemplatesByBlog();
       setAvailableTemplates(templates);
     } catch (error) {
       console.error('템플릿 로드 실패:', error);
@@ -795,7 +809,14 @@ function WritePageContent() {
                   placeholder="멋진 포스트 제목을 입력하세요..."
                   value={postTitle}
                   onChange={(e) => setPostTitle(e.target.value)}
-                  className="w-full text-xl font-semibold border-none outline-none"
+                  className="w-full text-xl font-semibold border-none outline-none mb-3"
+                />
+                <input
+                  type="text"
+                  placeholder="포스트 설명을 입력하세요..."
+                  value={postDescription}
+                  onChange={(e) => setPostDescription(e.target.value)}
+                  className="w-full text-sm text-gray-600 border-none outline-none"
                 />
                 <div className="flex items-center gap-2 text-sm text-gray-500 mt-2">
                   <span>
@@ -896,11 +917,13 @@ function WritePageContent() {
                     ) : (
                       <>
                         <option value="">카테고리를 선택하세요</option>
-                        {availableCategories.map((cat) => (
-                          <option key={cat} value={cat}>
-                            {cat}
-                          </option>
-                        ))}
+                        {availableCategories
+                          .filter(category => category.status === 'Y')
+                          .map((category) => (
+                            <option key={category.name} value={category.name}>
+                              {category.name}
+                            </option>
+                          ))}
                       </>
                     )}
                   </select>
@@ -1091,6 +1114,7 @@ function WritePageContent() {
                     setShowPublishedPreview(false);
                     // 에디터 내용 새로고침
                     setPostTitle('');
+                    setPostDescription('');
                     setPostContent('');
                     setTags('');
                     setMetaTitle('');

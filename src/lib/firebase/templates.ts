@@ -22,12 +22,11 @@ export interface Template {
 }
 
 /**
- * 템플릿 저장 (axi 블로그에)
+ * 템플릿 저장 (사용자별, 최상위 templates 컬렉션)
  */
 export async function saveTemplateToFirestore(
   title: string,
-  content: string,
-  blogId: string = 'axi'
+  content: string
 ): Promise<string> {
   try {
     const currentUser = auth.currentUser;
@@ -35,7 +34,7 @@ export async function saveTemplateToFirestore(
       throw new Error('로그인이 필요합니다.');
     }
 
-    const templatesRef = collection(db, 'blogs', blogId, 'templates');
+    const templatesRef = collection(db, 'templates');
     const now = Timestamp.now();
 
     const templateData = {
@@ -57,16 +56,16 @@ export async function saveTemplateToFirestore(
 }
 
 /**
- * 템플릿 목록 가져오기
+ * 템플릿 목록 가져오기 (현재 사용자의 템플릿만)
  */
-export async function getTemplatesByBlog(blogId: string = 'axi'): Promise<Template[]> {
+export async function getTemplatesByBlog(): Promise<Template[]> {
   try {
     const currentUser = auth.currentUser;
     if (!currentUser) {
       throw new Error('로그인이 필요합니다.');
     }
 
-    const templatesRef = collection(db, 'blogs', blogId, 'templates');
+    const templatesRef = collection(db, 'templates');
     const q = query(templatesRef, orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
 
@@ -93,11 +92,10 @@ export async function getTemplatesByBlog(blogId: string = 'axi'): Promise<Templa
  * 특정 템플릿 가져오기
  */
 export async function getTemplateById(
-  blogId: string,
   templateId: string
 ): Promise<Template | null> {
   try {
-    const templateRef = doc(db, 'blogs', blogId, 'templates', templateId);
+    const templateRef = doc(db, 'templates', templateId);
     const templateDoc = await getDoc(templateRef);
 
     if (templateDoc.exists()) {
@@ -118,7 +116,6 @@ export async function getTemplateById(
  * 템플릿 수정
  */
 export async function updateTemplateInFirestore(
-  blogId: string,
   templateId: string,
   updates: {
     title?: string;
@@ -126,7 +123,7 @@ export async function updateTemplateInFirestore(
   }
 ): Promise<void> {
   try {
-    const templateRef = doc(db, 'blogs', blogId, 'templates', templateId);
+    const templateRef = doc(db, 'templates', templateId);
 
     await updateDoc(templateRef, {
       ...updates,
@@ -144,11 +141,10 @@ export async function updateTemplateInFirestore(
  * 템플릿 삭제
  */
 export async function deleteTemplateFromFirestore(
-  blogId: string,
   templateId: string
 ): Promise<void> {
   try {
-    const templateRef = doc(db, 'blogs', blogId, 'templates', templateId);
+    const templateRef = doc(db, 'templates', templateId);
     await deleteDoc(templateRef);
 
     console.log('✅ 템플릿 삭제 완료:', templateId);

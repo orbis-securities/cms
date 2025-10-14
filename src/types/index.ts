@@ -54,6 +54,7 @@ export interface Post {
   id: string;
   blogId: string;
   title: string;
+  description?: string;
   slug: string;
   content: string;
   excerpt: string;

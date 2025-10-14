@@ -42,7 +42,7 @@ function ProfilePageContent() {
       if (activeTab === 'templates') {
         setIsLoadingTemplates(true);
         try {
-          const templateList = await getTemplatesByBlog('axi');
+          const templateList = await getTemplatesByBlog();
           setTemplates(templateList);
         } catch (error) {
           console.error('템플릿 로드 실패:', error);
@@ -63,7 +63,7 @@ function ProfilePageContent() {
     }
 
     try {
-      await deleteTemplateFromFirestore('axi', templateId);
+      await deleteTemplateFromFirestore(templateId);
       toast.success('템플릿이 삭제되었습니다.');
 
       // 목록에서 제거
