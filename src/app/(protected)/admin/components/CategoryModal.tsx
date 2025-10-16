@@ -12,9 +12,12 @@ interface CategoryModalProps {
 }
 
 export interface CategoryData {
+  categoryId?: string;
   blogId: string;
-  category: string;
-  description: string;
+  categoryKo: string;
+  categoryEn: string;
+  descriptionKo: string;
+  descriptionEn: string;
   status: 'Y' | 'N';
 }
 
@@ -27,19 +30,29 @@ export default function CategoryModal({
 }: CategoryModalProps) {
   const [formData, setFormData] = useState<CategoryData>({
     blogId: '',
-    category: '',
-    description: '',
+    categoryKo: '',
+    categoryEn: '',
+    descriptionKo: '',
+    descriptionEn: '',
     status: 'Y'
   });
 
   useEffect(() => {
     if (editData) {
-      setFormData(editData);
+      setFormData({
+        ...editData,
+        categoryKo: editData.categoryKo || '',
+        categoryEn: editData.categoryEn || '',
+        descriptionKo: editData.descriptionKo || '',
+        descriptionEn: editData.descriptionEn || ''
+      });
     } else {
       setFormData({
         blogId: blogs.length > 0 ? blogs[0].blogId : '',
-        category: '',
-        description: '',
+        categoryKo: '',
+        categoryEn: '',
+        descriptionKo: '',
+        descriptionEn: '',
         status: 'Y'
       });
     }
@@ -48,8 +61,9 @@ export default function CategoryModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.blogId || !formData.category || !formData.description) {
-      alert('블로그, 카테고리, 설명은 필수 입력 항목입니다.');
+    if (!formData.blogId || !formData.categoryKo || !formData.categoryEn ||
+        !formData.descriptionKo || !formData.descriptionEn) {
+      alert('블로그, 카테고리(한국어/영어), 설명(한국어/영어)은 필수 입력 항목입니다.');
       return;
     }
 
@@ -60,8 +74,10 @@ export default function CategoryModal({
   const handleClose = () => {
     setFormData({
       blogId: blogs.length > 0 ? blogs[0].blogId : '',
-      category: '',
-      description: '',
+      categoryKo: '',
+      categoryEn: '',
+      descriptionKo: '',
+      descriptionEn: '',
       status: 'Y'
     });
     onClose();
@@ -114,30 +130,60 @@ export default function CategoryModal({
             </select>
           </div>
 
-          {/* 카테고리 입력 */}
+          {/* 카테고리 입력 - 한국어 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              카테고리 <span className="text-red-500">*</span>
+              카테고리 (한국어) <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              placeholder="카테고리명을 입력하세요"
+              value={formData.categoryKo || ''}
+              onChange={(e) => setFormData({ ...formData, categoryKo: e.target.value })}
+              placeholder="한국어 카테고리명을 입력하세요"
               className="w-full px-3 py-2 border border-gray-200 rounded-lg"
               required
             />
           </div>
 
-          {/* 설명 입력 */}
+          {/* 카테고리 입력 - 영어 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              설명 <span className="text-red-500">*</span>
+              카테고리 (English) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.categoryEn || ''}
+              onChange={(e) => setFormData({ ...formData, categoryEn: e.target.value })}
+              placeholder="Enter category name in English"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+              required
+            />
+          </div>
+
+          {/* 설명 입력 - 한국어 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              설명 (한국어) <span className="text-red-500">*</span>
             </label>
             <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="설명을 입력하세요"
+              value={formData.descriptionKo || ''}
+              onChange={(e) => setFormData({ ...formData, descriptionKo: e.target.value })}
+              placeholder="한국어 설명을 입력하세요"
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg resize-none"
+              required
+            />
+          </div>
+
+          {/* 설명 입력 - 영어 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              설명 (English) <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={formData.descriptionEn || ''}
+              onChange={(e) => setFormData({ ...formData, descriptionEn: e.target.value })}
+              placeholder="Enter description in English"
               rows={3}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg resize-none"
               required

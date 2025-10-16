@@ -57,6 +57,7 @@ function WritePageContent() {
   const [publishedPostUrl, setPublishedPostUrl] = useState('');
   const [showSpellCheck, setShowSpellCheck] = useState(false);
   const [featuredImage, setFeaturedImage] = useState('');
+  const [langType, setLangType] = useState('ko');
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [availableTemplates, setAvailableTemplates] = useState<Template[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
@@ -101,6 +102,7 @@ function WritePageContent() {
             setMetaDescription(post.seo?.metaDescription || '');
             setKeywords(post.seo?.keywords?.join(', ') || '');
             setFeaturedImage(post.featuredImage || '');
+            setLangType((post as any).langType || 'ko');
             console.log('✅ 수정할 포스트 로드 완료:', post.title);
           } else {
             console.warn('⚠️ 포스트를 찾을 수 없음');
@@ -156,7 +158,7 @@ function WritePageContent() {
             setAvailableCategories(settings.categories);
             // 수정 모드가 아닐 때만 첫 번째 카테고리를 기본값으로 설정
             if (settings.categories.length > 0 && !category && !isEditMode) {
-              setCategory(settings.categories[0].name);
+              setCategory(settings.categories[0].categoryId);
             }
           }
         } catch (error) {
@@ -289,6 +291,10 @@ function WritePageContent() {
       toast.info('카테고리를 선택해주세요', { position: 'top-center' });
       return;
     }
+    if (!langType.trim()) {
+      toast.info('언어를 선택해주세요', { position: 'top-center' });
+      return;
+    }
     if (!featuredImage.trim()) {
       toast.info('타이틀 이미지를 설정해주세요', { position: 'top-center' });
       return;
@@ -311,13 +317,14 @@ function WritePageContent() {
           tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
           status: 'draft',
           featuredImage: featuredImage,
+          langType: langType,
           seo: {
             metaTitle: metaTitle || postTitle,
             metaDescription: metaDescription,
             keywords: keywords.split(',').map(keyword => keyword.trim()).filter(Boolean),
           },
           ...(pollsData.length > 0 && { polls: pollsData })
-        });
+        } as any);
 
         toast.success('포스트가 수정되었습니다! 📝');
       } else {
@@ -339,7 +346,8 @@ function WritePageContent() {
             metaDescription: metaDescription,
             keywords: keywords.split(',').map(keyword => keyword.trim()).filter(Boolean),
             status: 'draft',
-            featuredImage: featuredImage
+            featuredImage: featuredImage,
+            langType: langType
           },
           pollsData
         );
@@ -382,6 +390,10 @@ function WritePageContent() {
       toast.info('카테고리를 선택해주세요', { position: 'top-center' });
       return;
     }
+    if (!langType.trim()) {
+      toast.info('언어를 선택해주세요', { position: 'top-center' });
+      return;
+    }
     if (!featuredImage.trim()) {
       toast.info('타이틀 이미지를 설정해주세요', { position: 'top-center' });
       return;
@@ -405,13 +417,14 @@ function WritePageContent() {
           status: 'published',
           publishedAt: Timestamp.now(),
           featuredImage: featuredImage,
+          langType: langType,
           seo: {
             metaTitle: metaTitle || postTitle,
             metaDescription: metaDescription,
             keywords: keywords.split(',').map(keyword => keyword.trim()).filter(Boolean),
           },
           ...(pollsData.length > 0 && { polls: pollsData })
-        });
+        } as any);
 
         // axi 블로그일 때만 미리보기 표시
         if (selectedBlog === 'axi') {
@@ -440,7 +453,8 @@ function WritePageContent() {
             metaDescription: metaDescription,
             keywords: keywords.split(',').map(keyword => keyword.trim()).filter(Boolean),
             status: 'published',
-            featuredImage: featuredImage
+            featuredImage: featuredImage,
+            langType: langType
           },
           pollsData
         );
@@ -609,7 +623,6 @@ function WritePageContent() {
 
   const handleSetFeatured = (imageUrl: string) => {
     setFeaturedImage(imageUrl);
-    toast.success('타이틀 이미지가 설정되었습니다.');
   };
 
   // 템플릿 모달 열기 시 템플릿 목록 로드
@@ -827,7 +840,11 @@ function WritePageContent() {
                     }
                   </span>
                   <span>•</span>
-                  <span>카테고리: {category}</span>
+                  <span>카테고리: {
+                    category
+                      ? availableCategories.find(cat => cat.categoryId === category)?.nameKo || category
+                      : '선택되지 않음'
+                  }</span>
                 </div>
               </div>
 
@@ -877,7 +894,9 @@ function WritePageContent() {
               <h3 className="font-semibold mb-4">발행 설정</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">블로그 선택</label>
+                  <label className="text-sm font-medium mb-2 block">
+                    블로그 선택 <span className="text-red-500">*</span>
+                  </label>
                   <select
                     className="w-full px-3 py-2 border rounded"
                     value={selectedBlog}
@@ -903,7 +922,9 @@ function WritePageContent() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">카테고리</label>
+                  <label className="text-sm font-medium mb-2 block">
+                    카테고리 <span className="text-red-500">*</span>
+                  </label>
                   <select
                     className="w-full px-3 py-2 border rounded"
                     value={category}
@@ -919,13 +940,27 @@ function WritePageContent() {
                         <option value="">카테고리를 선택하세요</option>
                         {availableCategories
                           .filter(category => category.status === 'Y')
-                          .map((category) => (
-                            <option key={category.name} value={category.name}>
-                              {category.name}
+                          .map((cat) => (
+                            <option key={cat.categoryId} value={cat.categoryId}>
+                              {cat.nameKo}
                             </option>
                           ))}
                       </>
                     )}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    언어 <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 border rounded"
+                    value={langType}
+                    onChange={(e) => setLangType(e.target.value)}
+                  >
+                    <option value="ko">한국어</option>
+                    <option value="en">영어</option>
                   </select>
                 </div>
 
@@ -945,7 +980,7 @@ function WritePageContent() {
             {/* 타이틀 이미지 */}
             <div className="bg-white rounded-lg border p-4">
               <h3 className="font-semibold flex items-center gap-2 mb-4">
-                ⭐ 타이틀 이미지
+                ⭐ 타이틀 이미지 <span className="text-red-500">*</span>
               </h3>
               {featuredImage ? (
                 <>
@@ -953,12 +988,12 @@ function WritePageContent() {
                     <img
                       src={featuredImage}
                       alt="Featured"
-                      className="w-full h-auto rounded-lg border border-gray-200"
+                      className="w-full h-auto rounded-lg border border-gray-200 featured-image-preview"
+                      data-featured-preview="true"
                     />
                     <button
                       onClick={() => {
                         setFeaturedImage('');
-                        toast.success('타이틀 이미지가 해제되었습니다.');
                       }}
                       className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
                       title="타이틀 이미지 해제"

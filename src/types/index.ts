@@ -70,8 +70,11 @@ export interface Post {
   readingTime: number;
   viewCount: number;
   createdAt: Timestamp;
-  updatedAt: Timestamp;
+  updatedAt: Timestamp | null;
+  createUser?: string;
+  updateUser?: string | null;
   polls?: PostPoll[];
+  langType?: string;
 }
 
 export interface PostSEO {

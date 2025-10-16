@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Trash2 } from 'lucide-react';
 import { getBlogSettings, getAllBlogs, BlogDesignSettings, Category, saveBlogSettings } from '@/lib/firebase/posts';
+import { getCurrentUser } from '@/lib/firebase/auth';
+import { Timestamp } from 'firebase/firestore';
 import { toast } from 'sonner';
 import CategoryModal, { CategoryData } from '../components/CategoryModal';
 
@@ -91,13 +93,15 @@ export default function CategoryManagement() {
           return false;
         }
 
-        // 검색어 필터링 (name + description)
+        // 검색어 필터링 (nameKo, nameEn, descriptionKo, descriptionEn)
         if (searchKeyword) {
           const keyword = searchKeyword.toLowerCase();
-          const matchName = category.name.toLowerCase().includes(keyword);
-          const matchDescription = category.description?.toLowerCase().includes(keyword);
+          const matchNameKo = category.nameKo?.toLowerCase().includes(keyword);
+          const matchNameEn = category.nameEn?.toLowerCase().includes(keyword);
+          const matchDescKo = category.descriptionKo?.toLowerCase().includes(keyword);
+          const matchDescEn = category.descriptionEn?.toLowerCase().includes(keyword);
 
-          if (!matchName && !matchDescription) {
+          if (!matchNameKo && !matchNameEn && !matchDescKo && !matchDescEn) {
             return false;
           }
         }
@@ -132,9 +136,12 @@ export default function CategoryManagement() {
   // 모달 열기 (수정)
   const handleEditCategory = (blogId: string, category: Category) => {
     setEditData({
+      categoryId: category.categoryId,
       blogId,
-      category: category.name,
-      description: category.description,
+      categoryKo: category.nameKo || '',
+      categoryEn: category.nameEn || '',
+      descriptionKo: category.descriptionKo || '',
+      descriptionEn: category.descriptionEn || '',
       status: category.status
     });
     setIsModalOpen(true);
@@ -155,21 +162,55 @@ export default function CategoryManagement() {
         return;
       }
 
+      // 현재 로그인한 사용자 정보 가져오기
+      const currentUser = getCurrentUser();
+      const userId = currentUser?.uid || 'admin';
+      const now = Timestamp.now();
+
       let updatedCategories: Category[];
 
-      if (editData) {
-        // 수정: 기존 카테고리 업데이트
+      if (editData && editData.categoryId) {
+        // 수정: 기존 카테고리 업데이트 (categoryId로 식별)
         updatedCategories = currentSettings.categories.map(cat =>
-          cat.name === editData.category
-            ? { name: data.category, description: data.description, status: data.status }
+          cat.categoryId === editData.categoryId
+            ? {
+                categoryId: editData.categoryId,
+                nameKo: data.categoryKo,
+                nameEn: data.categoryEn,
+                descriptionKo: data.descriptionKo,
+                descriptionEn: data.descriptionEn,
+                status: data.status,
+                createdAt: cat.createdAt, // 기존 생성 정보 유지
+                createUser: cat.createUser,
+                updatedAt: now, // 수정 정보 업데이트
+                updateUser: userId
+              }
             : cat
         );
       } else {
-        // 추가: 새 카테고리 추가
+        // 추가: 새 카테고리 추가 (categoryId 순차 생성: 001, 002, ...)
+        // 기존 카테고리 ID에서 숫자 추출하여 최대값 찾기
+        const existingNumbers = currentSettings.categories
+          .map(cat => {
+            const match = cat.categoryId.match(/(\d+)$/);
+            return match ? parseInt(match[1], 10) : 0;
+          })
+          .filter(num => !isNaN(num));
+
+        const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+        const nextNumber = maxNumber + 1;
+        const newCategoryId = nextNumber.toString().padStart(3, '0'); // 001, 002, ...
+
         const newCategory: Category = {
-          name: data.category,
-          description: data.description,
-          status: data.status
+          categoryId: newCategoryId,
+          nameKo: data.categoryKo,
+          nameEn: data.categoryEn,
+          descriptionKo: data.descriptionKo,
+          descriptionEn: data.descriptionEn,
+          status: data.status,
+          createdAt: now, // 생성 정보
+          createUser: userId
+          // 처음 등록 시에는 updatedAt, updateUser 없음
         };
         updatedCategories = [...currentSettings.categories, newCategory];
       }
@@ -189,8 +230,8 @@ export default function CategoryManagement() {
   };
 
   // 카테고리 삭제
-  const handleDeleteCategory = async (blogId: string, categoryName: string) => {
-    if (!confirm(`"${categoryName}" 카테고리를 삭제하시겠습니까?`)) {
+  const handleDeleteCategory = async (blogId: string, category: Category) => {
+    if (!confirm(`[${category.nameKo}] 카테고리를 삭제하면 기존에 등록된 포스트는 조회할 수 없게 됩니다. 정말 삭제하시겠습니까?`)) {
       return;
     }
 
@@ -202,9 +243,9 @@ export default function CategoryManagement() {
         return;
       }
 
-      // 해당 카테고리 제외하고 새 배열 생성
+      // 해당 카테고리 제외하고 새 배열 생성 (categoryId로 식별)
       const updatedCategories = currentSettings.categories.filter(
-        cat => cat.name !== categoryName
+        cat => cat.categoryId !== category.categoryId
       );
 
       // Firebase에 저장
@@ -338,11 +379,11 @@ export default function CategoryManagement() {
                             onClick={() => handleEditCategory(blog.blogId, category)}
                             className="text-gray-900 hover:text-blue-600 hover:underline transition-colors cursor-pointer font-medium max-w-full truncate block"
                           >
-                            {category.name}
+                            {category.nameKo}
                           </button>
                         </td>
                         <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-500 max-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-                          {category.description || '-'}
+                          {category.descriptionKo || '-'}
                         </td>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -355,7 +396,7 @@ export default function CategoryManagement() {
                         </td>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-center text-xs sm:text-sm">
                           <button
-                            onClick={() => handleDeleteCategory(blog.blogId, category.name)}
+                            onClick={() => handleDeleteCategory(blog.blogId, category)}
                             className="text-red-600 hover:text-red-800 transition-colors"
                           >
                             <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />

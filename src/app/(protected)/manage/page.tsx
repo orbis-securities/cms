@@ -5,24 +5,19 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   Search,
-  Edit,
-  Eye,
-  Trash2,
   ChevronLeft,
   ChevronRight,
   FileText,
-  Calendar,
-  Tag,
   Users
 } from 'lucide-react';
-import { getPostsByBlog, getAllPostsByBlog, getPostsByCategory, getBlogSettings, deletePostFromFirestore, getAllBlogs, Category } from '@/lib/firebase/posts';
+import { getPostListByBlog, getBlogSettings, getAllBlogs, Category } from '@/lib/firebase/posts';
 import { Post } from '@/types';
-import { toast, Toaster } from 'sonner';
 
 export default function ManagePosts() {
   const [selectedBlog, setSelectedBlog] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
@@ -39,6 +34,11 @@ export default function ManagePosts() {
       try {
         const blogs = await getAllBlogs();
         setAvailableBlogs(blogs);
+
+        // 첫 번째 블로그 자동 선택
+        if (blogs.length > 0) {
+          setSelectedBlog(blogs[0].blogId);
+        }
       } catch (error) {
         console.error('블로그 목록 로드 실패:', error);
       }
@@ -47,30 +47,50 @@ export default function ManagePosts() {
     loadBlogs();
   }, []);
 
-  // 블로그 선택 시 카테고리 불러오기
+  // 블로그 선택 시 카테고리 불러오기 및 자동 검색 (병렬 처리)
   useEffect(() => {
-    const loadBlogSettings = async () => {
-      if (selectedBlog) {
+    const loadBlogData = async () => {
+      if (selectedBlog && selectedBlog !== 'all') {
+        setLoading(true);
         try {
-          const settings = await getBlogSettings(selectedBlog);
+          // 카테고리 정보와 포스트 목록을 병렬로 로드
+          const [settings, result] = await Promise.all([
+            getBlogSettings(selectedBlog),
+            getPostListByBlog(selectedBlog, postsPerPage, undefined, {
+              category: selectedCategory.trim() || undefined,
+              status: selectedStatus.trim() || undefined,
+              langType: selectedLanguage.trim() || undefined,
+              searchTerm: searchTerm.trim() || undefined
+            })
+          ]);
+
+          // 카테고리 정보 설정
           if (settings) {
             setAvailableCategories(settings.categories);
           }
+
+          // 포스트 목록 설정
+          setPosts(result.posts);
+          setHasMore(result.hasMore);
+          setCurrentPage(1);
         } catch (error) {
-          console.error('블로그 설정 로드 실패:', error);
+          console.error('데이터 로드 실패:', error);
+        } finally {
+          setLoading(false);
         }
       } else {
         setAvailableCategories([]);
         setSelectedCategory('');
+        setPosts([]);
       }
     };
 
-    loadBlogSettings();
+    loadBlogData();
   }, [selectedBlog]);
 
   // 포스트 검색
   const handleSearch = async () => {
-    console.log('🔍 검색 시작:', { selectedBlog, selectedCategory, selectedStatus });
+    console.log('🔍 검색 시작:', { selectedBlog, selectedCategory, selectedStatus, selectedLanguage, searchTerm });
 
     if (!selectedBlog) {
       alert('먼저 블로그를 선택해주세요.');
@@ -79,38 +99,17 @@ export default function ManagePosts() {
 
     setLoading(true);
     try {
-      let result;
+      // Firebase 쿼리에 필터 조건 전달 (빈 문자열은 undefined로 변환)
+      const result = await getPostListByBlog(selectedBlog, postsPerPage, undefined, {
+        category: selectedCategory.trim() || undefined,
+        status: selectedStatus.trim() || undefined,
+        langType: selectedLanguage.trim() || undefined,
+        searchTerm: searchTerm.trim() || undefined
+      });
 
-      if (selectedCategory) {
-        // 카테고리별 조회
-        console.log('📂 카테고리별 조회:', selectedBlog, selectedCategory);
-        const categoryResult = await getPostsByCategory(selectedBlog, selectedCategory, postsPerPage);
-        console.log('📊 카테고리 조회 결과:', categoryResult);
-        result = categoryResult;
-      } else {
-        // 전체 포스트 조회
-        console.log('🌐 전체 포스트 조회:', selectedBlog);
-        const blogResult = await getPostsByBlog(selectedBlog, postsPerPage);
-        console.log('📊 전체 조회 결과:', blogResult);
-        result = blogResult;
-      }
+      console.log('📊 필터링된 조회 결과:', result);
 
-      let filteredPosts = result.posts;
-
-      // 상태별 필터링
-      if (selectedStatus !== 'all') {
-        filteredPosts = filteredPosts.filter(post => post.status === selectedStatus);
-      }
-
-      // 검색어 필터링
-      if (searchTerm) {
-        filteredPosts = filteredPosts.filter(post =>
-          post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          post.content.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-
-      setPosts(filteredPosts);
+      setPosts(result.posts);
       setHasMore(result.hasMore);
       setCurrentPage(1);
     } catch (error) {
@@ -121,72 +120,58 @@ export default function ManagePosts() {
     }
   };
 
-  // 필터 초기화
-  const resetFilters = () => {
-    setSelectedBlog('');
-    setSelectedCategory('');
-    setSelectedStatus('all');
-    setSearchTerm('');
-    setPosts([]);
-    setCurrentPage(1);
-    setHasMore(false);
-  };
-
   // 날짜 포맷팅
   const formatDate = (timestamp: any) => {
     if (!timestamp) return '-';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleDateString('ko-KR', {
+    return date.toLocaleString('ko-KR', {
       year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
     });
   };
 
-  // 포스트 삭제
-  const handleDeletePost = async (post: Post) => {
-    // 첫 번째 확인
-    if (!confirm(`정말로 "${post.title}" 포스트를 삭제하시겠습니까?`)) {
-      return;
+  // 카테고리 이름 가져오기
+  const getCategoryName = (categoryId: string) => {
+    const category = availableCategories.find(cat => cat.categoryId === categoryId);
+    if (category) {
+      return `${category.nameKo} / ${category.nameEn}`;
     }
+    return categoryId;
+  };
 
-    // 두 번째 확인 (ID 입력)
-    const userInput = prompt(`삭제를 확인하려면 포스트 ID를 입력하세요:\n\n포스트 ID: ${post.id}`);
-    if (userInput !== post.id) {
-      toast.error('포스트 ID가 일치하지 않습니다. 삭제가 취소되었습니다.');
-      return;
-    }
-
-    try {
-      await deletePostFromFirestore(selectedBlog, post.categories[0], post.id);
-      toast.success('포스트가 삭제되었습니다.');
-
-      // 목록에서 제거
-      setPosts(prev => prev.filter(p => p.id !== post.id));
-    } catch (error) {
-      console.error('포스트 삭제 실패:', error);
-      toast.error('포스트 삭제에 실패했습니다.');
+  // 상태 텍스트
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'published':
+        return '발행됨';
+      case 'draft':
+        return '초안';
+      default:
+        return status;
     }
   };
 
-  // 상태 표시
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'published':
-        return <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">발행됨</span>;
-      case 'draft':
-        return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">초안</span>;
+  // 언어 텍스트
+  const getLanguageText = (langType?: string) => {
+    switch (langType) {
+      case 'ko':
+        return '한국어';
+      case 'en':
+        return '영어';
       default:
-        return <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">{status}</span>;
+        return langType || '-';
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <Toaster position="top-right" />
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <header className="bg-white border-b border-gray-200 px-5 py-4">
+        <div className="max-w-screen-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
               href="/"
@@ -219,18 +204,16 @@ export default function ManagePosts() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-screen-2xl mx-auto px-5 py-6">
 
         {/* 필터 섹션 */}
-        <div className="bg-white rounded-lg border p-6 mb-6">
-          <h3 className="text-lg font-semibold mb-4">검색 필터</h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-            {/* 블로그 선택 */}
-            <div>
-              <label className="block text-sm font-medium mb-2">블로그 선택 *</label>
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
+            {/* 블로그 선택 - 2 */}
+            <div className="sm:col-span-1 lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">블로그 *</label>
               <select
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg"
                 value={selectedBlog}
                 onChange={(e) => setSelectedBlog(e.target.value)}
                 disabled={availableBlogs.length === 0}
@@ -239,7 +222,7 @@ export default function ManagePosts() {
                   <option value="">블로그 로딩 중...</option>
                 ) : (
                   <>
-                    <option value="">블로그를 선택하세요</option>
+                    <option value="all">블로그 선택</option>
                     {availableBlogs.map((blog) => (
                       <option key={blog.blogId} value={blog.blogId}>
                         {blog.displayName}
@@ -250,203 +233,145 @@ export default function ManagePosts() {
               </select>
             </div>
 
-            {/* 카테고리 선택 */}
-            <div>
-              <label className="block text-sm font-medium mb-2">카테고리</label>
+            {/* 카테고리 선택 - 2 */}
+            <div className="sm:col-span-1 lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
               <select
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg"
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 disabled={!selectedBlog || availableCategories.length === 0}
               >
-                <option value="">전체 카테고리</option>
+                <option value="all">카테고리 선택</option>
                 {availableCategories
                   .filter(category => category.status === 'Y')
                   .map((category) => (
-                    <option key={category.name} value={category.name}>
-                      {category.name}
+                    <option key={category.categoryId} value={category.categoryId}>
+                      {category.nameKo}
                     </option>
                   ))}
               </select>
             </div>
 
-            {/* 상태 선택 */}
-            <div>
-              <label className="block text-sm font-medium mb-2">상태</label>
+            {/* 언어 선택 - 1 */}
+            <div className="sm:col-span-1 lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">언어</label>
               <select
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg"
+                value={selectedLanguage}
+                onChange={(e) => setSelectedLanguage(e.target.value)}
+              >
+                <option value="all">언어 선택</option>
+                <option value="ko">한국어</option>
+                <option value="en">영어</option>
+              </select>
+            </div>
+
+            {/* 상태 선택 - 1 */}
+            <div className="sm:col-span-1 lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">상태</label>
+              <select
+                className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg"
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
               >
-                <option value="all">전체 상태</option>
+                <option value="all">상태 선택</option>
                 <option value="published">발행됨</option>
                 <option value="draft">초안</option>
               </select>
             </div>
 
-            {/* 검색어 */}
-            <div>
-              <label className="block text-sm font-medium mb-2">검색어</label>
+            {/* 검색어 - 3 */}
+            <div className="sm:col-span-2 lg:col-span-3">
+              <label className="block text-sm font-medium text-gray-700 mb-2">검색어</label>
               <input
                 type="text"
                 placeholder="제목 또는 내용 검색"
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-          </div>
 
-          <div className="flex gap-3">
-            <button
-              onClick={handleSearch}
-              disabled={!selectedBlog || loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 flex items-center gap-2"
-            >
-              <Search className="w-4 h-4" />
-              {loading ? '검색 중...' : '검색'}
-            </button>
-            <button
-              onClick={resetFilters}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2"
-            >
-              초기화
-            </button>
+            {/* 검색 버튼 - 1 */}
+            <div className="sm:col-span-2 lg:col-span-1 flex items-end">
+              <button
+                onClick={handleSearch}
+                disabled={!selectedBlog || loading}
+                className="w-full h-10 px-3 sm:px-4 bg-blue-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600 flex items-center justify-center gap-2"
+              >
+                {loading ? '검색 중...' : '검색'}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* 검색 안내 메시지 */}
-        {posts.length === 0 && !loading && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
-            <FileText className="w-12 h-12 text-blue-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-blue-900 mb-2">
-              포스트를 검색해보세요
-            </h3>
-            <p className="text-blue-700">
-              위의 필터에서 블로그를 선택한 후 검색 버튼을 눌러주세요
-            </p>
-          </div>
-        )}
-
         {/* 포스트 리스트 */}
-        {posts.length > 0 && (
-          <div className="bg-white rounded-lg border">
-            <div className="p-6 border-b">
-              <h3 className="text-lg font-semibold">
-                검색 결과 ({posts.length}개)
-              </h3>
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2"></div>
+              <p className="text-gray-600">포스트 목록을 불러오는 중...</p>
             </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
+          ) : (
+            <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+              <table className="w-full min-w-[640px] border-collapse border-hidden">
+                <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">제목</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">카테고리</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">상태</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">생성일</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">작업</th>
+                    <th className="px-3 sm:px-6 py-3 text-center text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">제목</th>
+                    <th className="px-3 sm:px-6 py-3 text-center text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">카테고리(ko/en)</th>
+                    <th className="px-3 sm:px-6 py-3 text-center text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">언어</th>
+                    <th className="px-3 sm:px-6 py-3 text-center text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">상태</th>
+                    <th className="px-3 sm:px-6 py-3 text-center text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">생성일</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {posts.map((post) => (
-                    <tr key={post.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {posts.length > 0 ? (
+                    posts.map((post) => (
+                      <tr key={post.id} className="h-16 hover:bg-gray-50">
+                      <td className="px-3 sm:px-6 py-4">
                         <Link
                           href={`/manage/${post.id}?blog=${selectedBlog}&category=${post.categories[0]}`}
                           className="block hover:text-blue-600 transition-colors"
                         >
-                          <div className="font-medium text-gray-900 truncate max-w-xs">
+                          <div className="font-medium text-gray-900 truncate max-w-2xl">
                             {post.title}
-                          </div>
-                          <div className="text-sm text-gray-500 truncate max-w-xs">
-                            {post.excerpt || '내용 없음'}
                           </div>
                         </Link>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                          {post.categories?.[0] || '-'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        {getStatusBadge(post.status)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {formatDate(post.createdAt)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={`/manage/${post.id}?blog=${selectedBlog}&category=${post.categories[0]}`}
-                            className="text-gray-600 hover:text-gray-800"
-                            title="상세보기"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Link>
-                          <Link
-                            href={`/write?id=${post.id}&category=${post.categories[0]}&blog=${selectedBlog}`}
-                            className="text-blue-600 hover:text-blue-800"
-                            title="수정"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Link>
-                          <button
-                            onClick={() => handleDeletePost(post)}
-                            className="text-red-600 hover:text-red-800"
-                            title="삭제"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                      <td className="px-3 sm:px-6 py-4 text-center">
+                        <div className="text-xs sm:text-sm text-gray-900">
+                          {getCategoryName(post.categories?.[0] || '')}
                         </div>
                       </td>
+                      <td className="px-3 sm:px-6 py-4 text-center">
+                        <div className="text-xs sm:text-sm text-gray-900">
+                          {getLanguageText(post.langType)}
+                        </div>
+                      </td>
+                      <td className="px-3 sm:px-6 py-4 text-center">
+                        <div className="text-xs sm:text-sm text-gray-900">
+                          {getStatusText(post.status)}
+                        </div>
+                      </td>
+                      <td className="px-3 sm:px-6 py-4 text-center text-xs sm:text-sm text-gray-500">
+                        {formatDate(post.createdAt)}
+                      </td>
                     </tr>
-                  ))}
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="px-3 sm:px-6 py-6 sm:py-8 text-center text-sm text-gray-500">
+                        검색 결과가 없습니다.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
-
-            {/* 페이지네이션 */}
-            {posts.length >= postsPerPage && (
-              <div className="p-6 border-t flex items-center justify-between">
-                <div className="text-sm text-gray-700">
-                  {posts.length}개 결과 표시
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    disabled={currentPage === 1}
-                    className="px-3 py-2 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <span className="px-3 py-2 text-sm">
-                    페이지 {currentPage}
-                  </span>
-                  <button
-                    disabled={!hasMore}
-                    className="px-3 py-2 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* 검색 결과 없음 */}
-        {!loading && posts.length === 0 && selectedBlog && (
-          <div className="bg-white rounded-lg border p-8 text-center">
-            <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              검색 결과가 없습니다
-            </h3>
-            <p className="text-gray-600">
-              다른 조건으로 검색해보세요
-            </p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
