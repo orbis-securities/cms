@@ -203,7 +203,7 @@ export default function EditorToolbar({
   };
 
   return (
-    <div className="border-b p-2 flex items-center gap-1 bg-gray-50">
+    <div className="p-2 flex items-center gap-1 bg-gray-50">
       {/* AI 버튼 */}
       <div className="relative ai-button-container">
         <button

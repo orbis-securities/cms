@@ -56,23 +56,11 @@ const SpellCheckPanel: React.FC<SpellCheckPanelProps> = ({
       }
 
       console.log('📡 API 호출 중...');
-      const response = await fetch('/api/enhance', {
+      const response = await fetch('/api/spellcheck', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          content: textContent,
-          command: `다음 텍스트의 맞춤법, 띄어쓰기, 문법 오류를 찾아서 JSON 형태로 정리해주세요. 각 오류마다 다음 형식으로 작성해주세요:
-
-[
-  {
-    "original": "틀린 단어나 구문",
-    "suggestion": "올바른 수정안",
-    "type": "spelling|spacing|grammar"
-  }
-]
-
-오류가 없다면 빈 배열 []을 반환해주세요. JSON 외의 다른 텍스트는 포함하지 마세요.`,
-          context: '맞춤법 검사'
+          content: textContent
         }),
       });
 
@@ -81,7 +69,7 @@ const SpellCheckPanel: React.FC<SpellCheckPanelProps> = ({
 
       if (response.ok && data.success) {
         // AI 응답에서 JSON 부분 추출
-        const aiResponse = data.enhanced;
+        const aiResponse = data.result;
         console.log('🤖 AI 응답 원문:', aiResponse);
         let parsedErrors: SpellError[] = [];
 

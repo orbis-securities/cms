@@ -824,7 +824,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       />
 
       {/* 메인 에디터 */}
-      <div className="relative border rounded-lg bg-white">
+      <div className="relative rounded-lg bg-white">
         {/* 편집 툴바 */}
         <EditorToolbar
           editor={editor}
@@ -851,7 +851,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
         </div>
 
         {/* 에디터 모드 탭 */}
-        <div className="border-b bg-gray-50 px-4">
+        <div className="bg-gray-50 px-4">
           <div className="flex gap-1">
             <button
               onClick={() => setEditorMode('visual')}
@@ -954,7 +954,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       )}
 
       {/* AI 요약 기능 */}
-      <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
+      <div className="mt-4 p-4 bg-white rounded-lg">
         <div className="flex items-center gap-3">
           <h4 className="text-sm font-medium text-gray-700">📝 AI 요약</h4>
           <button
@@ -985,7 +985,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       </div>
 
       {/* AI 도움말 */}
-      <div className="mt-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-100">
+      <div className="mt-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg">
         <div className="flex items-center justify-center gap-2 text-sm text-gray-700">
           <span>
             <strong>AI 버튼</strong>: 텍스트 선택 → 리라이팅 | 미선택 → 본문 보강

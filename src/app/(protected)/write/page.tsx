@@ -815,8 +815,8 @@ function WritePageContent() {
           
           {/* 메인 에디터 */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg border">
-              <div className="p-6 border-b">
+            <div className="bg-white rounded-lg shadow-sm">
+              <div className="p-6">
                 <input
                   type="text"
                   placeholder="멋진 포스트 제목을 입력하세요..."
@@ -890,15 +890,15 @@ function WritePageContent() {
           <div className="space-y-6">
             
             {/* 발행 설정 */}
-            <div className="bg-white rounded-lg border p-4">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
               <h3 className="font-semibold mb-4">발행 설정</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     블로그 선택 <span className="text-red-500">*</span>
                   </label>
                   <select
-                    className="w-full px-3 py-2 border rounded"
+                    className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg"
                     value={selectedBlog}
                     onChange={(e) => setSelectedBlog(e.target.value)}
                     disabled={availableBlogs.length === 0}
@@ -922,11 +922,11 @@ function WritePageContent() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     카테고리 <span className="text-red-500">*</span>
                   </label>
                   <select
-                    className="w-full px-3 py-2 border rounded"
+                    className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg"
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
                     disabled={!selectedBlog || availableCategories.length === 0}
@@ -951,11 +951,11 @@ function WritePageContent() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     언어 <span className="text-red-500">*</span>
                   </label>
                   <select
-                    className="w-full px-3 py-2 border rounded"
+                    className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg"
                     value={langType}
                     onChange={(e) => setLangType(e.target.value)}
                   >
@@ -965,11 +965,11 @@ function WritePageContent() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">태그</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">태그</label>
                   <input
                     type="text"
                     placeholder="태그를 입력하세요 (쉼표로 구분)"
-                    className="w-full px-3 py-2 border rounded"
+                    className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg"
                     value={tags}
                     onChange={(e) => setTags(e.target.value)}
                   />
@@ -978,7 +978,7 @@ function WritePageContent() {
             </div>
 
             {/* 타이틀 이미지 */}
-            <div className="bg-white rounded-lg border p-4">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
               <h3 className="font-semibold flex items-center gap-2 mb-4">
                 ⭐ 타이틀 이미지 <span className="text-red-500">*</span>
               </h3>
@@ -1019,27 +1019,27 @@ function WritePageContent() {
             </div>
 
             {/* SEO 설정 */}
-            <div className="bg-white rounded-lg border p-4">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
               <h3 className="font-semibold mb-2">SEO 설정</h3>
               <p className="text-sm text-gray-500 mb-4">
                 검색엔진 최적화를 위한 메타데이터
               </p>
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">메타 제목</label>
-                  <input 
+                  <label className="block text-sm font-medium text-gray-700 mb-2">메타 제목</label>
+                  <input
                     type="text"
-                    placeholder="검색 결과에 표시될 제목" 
-                    className="w-full px-3 py-2 border rounded"
+                    placeholder="검색 결과에 표시될 제목"
+                    className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg"
                     value={metaTitle}
                     onChange={(e) => setMetaTitle(e.target.value)}
                   />
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">메타 설명</label>
-                  <textarea 
-                    className="w-full px-3 py-2 border rounded resize-none"
+                  <label className="block text-sm font-medium text-gray-700 mb-2">메타 설명</label>
+                  <textarea
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
                     rows={3}
                     placeholder="검색 결과에 표시될 설명 (160자 이하)"
                     value={metaDescription}
@@ -1048,11 +1048,11 @@ function WritePageContent() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">키워드</label>
-                  <input 
+                  <label className="block text-sm font-medium text-gray-700 mb-2">키워드</label>
+                  <input
                     type="text"
-                    placeholder="검색 키워드 (쉼표로 구분)" 
-                    className="w-full px-3 py-2 border rounded"
+                    placeholder="검색 키워드 (쉼표로 구분)"
+                    className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg"
                     value={keywords}
                     onChange={(e) => setKeywords(e.target.value)}
                   />
