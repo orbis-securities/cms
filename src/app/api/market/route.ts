@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// 간단한 메모리 캐시 (Rate Limit 회피용)
+const cache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 60000; // 60초 캐시
+
 // 사용 가능한 코인 목록 (CoinGecko ID)
 const AVAILABLE_COINS: Record<string, string> = {
   // Top 10
@@ -55,6 +59,19 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const symbolsParam = searchParams.get('symbols');
     const selectedSymbols = symbolsParam ? symbolsParam.split(',') : null;
+
+    // 캐시 키 생성
+    const cacheKey = `market_${symbolsParam || 'default'}`;
+    const cached = cache.get(cacheKey);
+
+    // 캐시된 데이터가 있고 유효하면 반환
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return NextResponse.json({
+        success: true,
+        data: cached.data,
+        cached: true,
+      });
+    }
 
     // 코인 목록 결정
     let coinIds: string[] = [];
@@ -141,9 +158,16 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     };
 
+    // 캐시에 저장
+    cache.set(cacheKey, {
+      data: marketData,
+      timestamp: Date.now(),
+    });
+
     return NextResponse.json({
       success: true,
       data: marketData,
+      cached: false,
     });
 
   } catch (error) {

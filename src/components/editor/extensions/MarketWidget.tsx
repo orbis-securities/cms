@@ -38,7 +38,7 @@ export const MarketWidget = Node.create({
     return {
       type: {
         default: 'coins',
-        parseHTML: element => element.getAttribute('data-type'),
+        parseHTML: element => element.getAttribute('data-market-type') || 'coins',
         renderHTML: attributes => {
           return {
             'data-type': attributes.type,
@@ -77,14 +77,14 @@ export const MarketWidget = Node.create({
     ];
   },
 
-  renderHTML({ HTMLAttributes }) {
+  renderHTML({ node, HTMLAttributes }) {
     const attrs: Record<string, any> = {
       'data-type': 'market-widget',
-      'data-market-type': HTMLAttributes.type || 'coins',
+      'data-market-type': node.attrs.type || 'coins',
     };
 
-    if (HTMLAttributes.symbols) {
-      attrs['data-symbols'] = JSON.stringify(HTMLAttributes.symbols);
+    if (node.attrs.symbols) {
+      attrs['data-symbols'] = JSON.stringify(node.attrs.symbols);
     }
 
     return [
