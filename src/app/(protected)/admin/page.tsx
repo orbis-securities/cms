@@ -5,16 +5,19 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   Settings,
-  List
+  List,
+  Image
 } from 'lucide-react';
 import { Toaster } from 'sonner';
 import CategoryManagement from './page/CategoryManagement';
+import PageBannerSetting from './page/PageBannerSetting';
 
 export default function AdminPage() {
   const [selectedMenu, setSelectedMenu] = useState<string>('category');
 
   const menuItems = [
     { id: 'category', name: '카테고리', icon: List },
+    { id: 'banner', name: '배너 설정', icon: Image },
   ];
 
   return (
@@ -80,6 +83,7 @@ export default function AdminPage() {
         {/* Main Content */}
         <main className="flex-1">
           {selectedMenu === 'category' && <CategoryManagement />}
+          {selectedMenu === 'banner' && <PageBannerSetting />}
         </main>
       </div>
     </div>

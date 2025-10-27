@@ -8,9 +8,13 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
-  Users
+  Users,
+  Star,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
-import { getPostListByBlog, getBlogSettings, getAllBlogs, Category } from '@/lib/firebase/posts';
+import { getPostListByBlog, getBlogSettings, getAllBlogs, Category, toggleFeaturedPost, getFeaturedPostsCount } from '@/lib/firebase/posts';
 import { Post } from '@/types';
 
 export default function ManagePosts() {
@@ -25,6 +29,7 @@ export default function ManagePosts() {
   const [hasMore, setHasMore] = useState(false);
   const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
   const [availableBlogs, setAvailableBlogs] = useState<{ blogId: string, displayName: string }[]>([]);
+  const [featuredSort, setFeaturedSort] = useState<'none' | 'desc' | 'asc'>('none');
 
   const postsPerPage = 10;
 
@@ -164,6 +169,60 @@ export default function ManagePosts() {
         return '영어';
       default:
         return langType || '-';
+    }
+  };
+
+  // 인기 게시글 정렬 토글
+  const handleToggleFeaturedSort = () => {
+    if (featuredSort === 'none') {
+      setFeaturedSort('desc'); // 인기 게시글 먼저
+    } else if (featuredSort === 'desc') {
+      setFeaturedSort('asc'); // 일반 게시글 먼저
+    } else {
+      setFeaturedSort('none'); // 정렬 해제
+    }
+  };
+
+  // 정렬된 게시글 목록
+  const sortedPosts = [...posts].sort((a, b) => {
+    if (featuredSort === 'none') return 0;
+
+    const aFeatured = a.isFeatured ? 1 : 0;
+    const bFeatured = b.isFeatured ? 1 : 0;
+
+    if (featuredSort === 'desc') {
+      return bFeatured - aFeatured; // 인기 게시글 먼저
+    } else {
+      return aFeatured - bFeatured; // 일반 게시글 먼저
+    }
+  });
+
+  // 인기 게시글 토글
+  const handleToggleFeatured = async (post: Post) => {
+    try {
+      const newFeaturedStatus = !post.isFeatured;
+
+      // 인기 게시글 설정 시 개수 체크 (언어별 최대 3개)
+      if (newFeaturedStatus) {
+        const currentFeaturedCount = await getFeaturedPostsCount(post.blogId, post.langType);
+        if (currentFeaturedCount >= 3) {
+          const langText = getLanguageText(post.langType);
+          alert(`${langText} 인기 게시글은 최대 3개까지만 설정할 수 있습니다.\n다른 인기 게시글을 먼저 해제해주세요.`);
+          return;
+        }
+      }
+
+      await toggleFeaturedPost(post.blogId, post.id, newFeaturedStatus);
+
+      // 목록 업데이트
+      setPosts(prevPosts =>
+        prevPosts.map(p =>
+          p.id === post.id ? { ...p, isFeatured: newFeaturedStatus } : p
+        )
+      );
+    } catch (error) {
+      console.error('인기 게시글 설정 실패:', error);
+      alert('인기 게시글 설정에 실패했습니다.');
     }
   };
 
@@ -319,6 +378,26 @@ export default function ManagePosts() {
               <table className="w-full min-w-[640px] border-collapse border-hidden">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
+                    <th className="px-3 sm:px-6 py-3 text-center text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">
+                      <div className="flex items-center justify-center gap-2">
+                        <span>인기</span>
+                        <button
+                          onClick={handleToggleFeaturedSort}
+                          className="inline-flex items-center justify-center w-6 h-6 rounded hover:bg-gray-200 transition-colors"
+                          title={
+                            featuredSort === 'none'
+                              ? '정렬하기'
+                              : featuredSort === 'desc'
+                              ? '인기 게시글 먼저'
+                              : '일반 게시글 먼저'
+                          }
+                        >
+                          {featuredSort === 'none' && <ArrowUpDown className="w-4 h-4 text-gray-500" />}
+                          {featuredSort === 'desc' && <ArrowDown className="w-4 h-4 text-blue-600" />}
+                          {featuredSort === 'asc' && <ArrowUp className="w-4 h-4 text-blue-600" />}
+                        </button>
+                      </div>
+                    </th>
                     <th className="px-3 sm:px-6 py-3 text-center text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">제목</th>
                     <th className="px-3 sm:px-6 py-3 text-center text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">카테고리(ko/en)</th>
                     <th className="px-3 sm:px-6 py-3 text-center text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">언어</th>
@@ -327,9 +406,24 @@ export default function ManagePosts() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {posts.length > 0 ? (
-                    posts.map((post) => (
+                  {sortedPosts.length > 0 ? (
+                    sortedPosts.map((post) => (
                       <tr key={post.id} className="h-16 hover:bg-gray-50">
+                      <td className="px-3 sm:px-6 py-4 text-center">
+                        <button
+                          onClick={() => handleToggleFeatured(post)}
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors"
+                          title={post.isFeatured ? '인기 게시글 해제' : '인기 게시글 설정'}
+                        >
+                          <Star
+                            className={`w-5 h-5 ${
+                              post.isFeatured
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'text-gray-300'
+                            }`}
+                          />
+                        </button>
+                      </td>
                       <td className="px-3 sm:px-6 py-4">
                         <Link
                           href={`/manage/${post.id}?blog=${selectedBlog}&category=${post.categories[0]}`}
@@ -362,7 +456,7 @@ export default function ManagePosts() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="px-3 sm:px-6 py-6 sm:py-8 text-center text-sm text-gray-500">
+                      <td colSpan={6} className="px-3 sm:px-6 py-6 sm:py-8 text-center text-sm text-gray-500">
                         검색 결과가 없습니다.
                       </td>
                     </tr>
@@ -371,6 +465,13 @@ export default function ManagePosts() {
               </table>
             </div>
           )}
+
+          {/* 안내 메시지 */}
+          <div className="px-4 py-3 border-t border-gray-200">
+            <p className="text-xs text-gray-500">
+              ℹ️ 인기 게시글은 언어별로 최대 3개씩 설정할 수 있습니다.
+            </p>
+          </div>
         </div>
       </div>
     </div>

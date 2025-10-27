@@ -575,3 +575,51 @@ function extractFirstImage(content: string): string | null {
   return match ? match[1] : null;
 }
 
+/**
+ * 인기 게시글 개수 조회 (언어별)
+ */
+export async function getFeaturedPostsCount(blogId: string, langType?: string): Promise<number> {
+  try {
+    const postsRef = collection(db, 'blogs', blogId, 'posts');
+    let q;
+
+    if (langType) {
+      // 언어별 인기 게시글 개수 조회
+      q = query(postsRef, where('isFeatured', '==', true), where('langType', '==', langType));
+    } else {
+      // 전체 인기 게시글 개수 조회
+      q = query(postsRef, where('isFeatured', '==', true));
+    }
+
+    const snapshot = await getDocs(q);
+
+    console.log(`✅ 인기 게시글 개수 조회 완료 (언어: ${langType || '전체'}):`, snapshot.size);
+    return snapshot.size;
+  } catch (error) {
+    console.error('❌ 인기 게시글 개수 조회 실패:', error);
+    throw error;
+  }
+}
+
+/**
+ * 인기 게시글 설정/해제
+ */
+export async function toggleFeaturedPost(
+  blogId: string,
+  postId: string,
+  isFeatured: boolean
+): Promise<void> {
+  try {
+    const postRef = doc(db, 'blogs', blogId, 'posts', postId);
+    await updateDoc(postRef, {
+      isFeatured,
+      updatedAt: Timestamp.now(),
+      updateUser: getCurrentUser()?.uid || 'admin'
+    });
+
+    console.log('✅ 인기 게시글 설정 완료:', postId, isFeatured);
+  } catch (error) {
+    console.error('❌ 인기 게시글 설정 실패:', error);
+    throw error;
+  }
+}

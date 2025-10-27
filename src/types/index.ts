@@ -69,6 +69,7 @@ export interface Post {
   seo: PostSEO;
   readingTime: number;
   viewCount: number;
+  isFeatured?: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp | null;
   createUser?: string;
