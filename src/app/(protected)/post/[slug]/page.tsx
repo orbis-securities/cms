@@ -27,40 +27,39 @@ export default function PostDetailPage() {
   const contentRef = useRef<HTMLDivElement>(null);
 
   // postId로 게시글 조회 (slug가 아닌 postId 사용)
-  const [postId, setPostId] = useState<string>('');
-  const [currentUserId, setCurrentUserId] = useState<string>('');
-
-  useEffect(() => {
-    // sessionStorage에서 postId 가져오기
+  // sessionStorage에서 초기값 바로 읽기 (리렌더링 방지)
+  const [postId] = useState<string>(() => {
     const storedData = sessionStorage.getItem('postDetailData');
-    if (storedData) {
-      const data = JSON.parse(storedData);
-      console.log('📦 sessionStorage에서 postId 가져옴:', data.postId);
-      setPostId(data.postId || '');
-    }
+    return storedData ? JSON.parse(storedData).postId || '' : '';
+  });
 
-    // localStorage에서 사용자 정보 가져오기
+  const [currentUserId] = useState<string>(() => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
       try {
         const userData = JSON.parse(userStr);
-        setCurrentUserId(userData.id || '');
+        return userData.id || '';
       } catch (error) {
         console.error('사용자 정보 파싱 실패:', error);
+        return '';
       }
     }
-  }, []);
+    return '';
+  });
 
   useEffect(() => {
     const loadPost = async () => {
       if (!postId) {
+        console.log('⚠️ postId가 없습니다.');
         setLoading(false);
         return;
       }
 
+      console.log('📦 postId:', postId);
+
       try {
         const token = localStorage.getItem('authToken');
-        const response = await fetch(`https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/getPost?postId=${postId}`, {
+        const response = await fetch(`https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/getPost?postId=${postId}&langType=ko`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -68,9 +67,7 @@ export default function PostDetailPage() {
 
         const data = await response.json();
 
-        // API 응답 데이터 콘솔에 출력
-        console.log('🔍 API 응답 전체:', data);
-        console.log('📝 포스트 데이터:', data.result);
+        console.log('🔍 API 응답:', data);
 
         if (data.code === "S" && data.result) {
           setPost(data.result.post);
@@ -338,18 +335,19 @@ export default function PostDetailPage() {
   return (
     <div className="max-w-screen-2xl mx-auto px-5 py-6">
       {/* Header */}
-      {!isPreview && canEdit && (
+      {!isPreview && (
         <div className="flex items-center justify-end gap-2 mb-4">
           <Button
-            onClick={() => router.push(`/write?id=${postId}&category=${post.categories?.[0] || ''}&blog=${post.blogId}`)}
+            onClick={() => router.push(`/write?id=${postId}`)}
             variant="ghost"
             icon={Edit}
+            disabled={!canEdit}
           >
             수정
           </Button>
           <Button
             onClick={handleDelete}
-            disabled={isDeleting}
+            disabled={!canEdit || isDeleting}
             variant="danger"
             icon={Trash2}
             loading={isDeleting}
@@ -364,9 +362,16 @@ export default function PostDetailPage() {
         {/* Post Header */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-start justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 flex-1">
-              {post.title}
-            </h1>
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                {post.title}
+              </h1>
+              {post.description && (
+                <p className="text-gray-600 text-base leading-relaxed">
+                  {post.description}
+                </p>
+              )}
+            </div>
             {getStatusBadge(post.status)}
           </div>
 
@@ -380,10 +385,10 @@ export default function PostDetailPage() {
             )}
 
             {/* 카테고리 */}
-            {post.categories && post.categories.length > 0 && (
+            {post.categoryNm && (
               <div className="flex items-center gap-1">
                 <Tag className="w-4 h-4" />
-                <span>{post.categories.join(', ')}</span>
+                <span>{post.categoryNm}</span>
               </div>
             )}
 
@@ -395,11 +400,11 @@ export default function PostDetailPage() {
               </div>
             )}
 
-            {/* 등록자 */}
-            {post.createUser && (
+            {/* 작성자 */}
+            {post.createdNm && (
               <div className="flex items-center gap-1">
-                <span className="font-medium">등록자:</span>
-                <span>{post.createUser}</span>
+                <span className="font-medium">작성자:</span>
+                <span>{post.createdNm}</span>
               </div>
             )}
 

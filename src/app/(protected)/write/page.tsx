@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, Suspense } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import AdvancedNovelEditor, { AdvancedNovelEditorRef } from '@/components/editor/AdvancedNovelEditor';
 import {
   Eye,
   Save,
   Send,
-  Loader2,
   FileText,
   X,
   Image as ImageIcon
@@ -19,20 +17,12 @@ import CommonCodeSelect from '@/components/common/CommonCodeSelect';
 import CategorySelect from '@/components/common/CategorySelect';
 import Button from '@/components/common/Button';
 
-// 타입 정의
-interface Category {
-  categoryId: string;
-  name: string;
-  displayName?: string;
-}
-
 function WritePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const editPostId = searchParams.get('id');
   const editCategory = searchParams.get('category');
   const editBlogId = searchParams.get('blog');
-  const templateId = searchParams.get('template');
   const isEditMode = !!editPostId; // postId만 있으면 수정 모드
 
   const [postTitle, setPostTitle] = useState('');
@@ -44,7 +34,6 @@ function WritePageContent() {
   const [selectedBlog, setSelectedBlog] = useState(editBlogId || '');
   const [category, setCategory] = useState(editCategory || '');
   const [tags, setTags] = useState('');
-  const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
   const [keywords, setKeywords] = useState('');
@@ -116,48 +105,6 @@ function WritePageContent() {
     loadPostForEdit();
   }, [isEditMode, editPostId]);
 
-  // 블로그 선택 시 카테고리 불러오기 - API로 변경
-  useEffect(() => {
-    const loadCategories = async () => {
-      if (selectedBlog) {
-        try {
-          const token = localStorage.getItem('authToken');
-          const response = await fetch(`https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/getCategories?blogId=${selectedBlog}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-
-          const data = await response.json();
-
-          if (data.code === "S" && data.result?.categories) {
-            const categories = data.result.categories.map((cat: any) => ({
-              categoryId: cat.categoryId,
-              name: cat.categoryName,
-              displayName: cat.categoryName
-            }));
-            setAvailableCategories(categories);
-
-            // 수정 모드가 아닐 때만 첫 번째 카테고리를 기본값으로 설정
-            if (categories.length > 0 && !category && !isEditMode) {
-              setCategory(categories[0].categoryId);
-            }
-          }
-        } catch (error) {
-          console.error('카테고리 로드 실패:', error);
-        }
-      } else {
-        // 블로그 선택 해제 시 초기화
-        setAvailableCategories([]);
-        if (!isEditMode) {
-          setCategory('');
-        }
-      }
-    };
-
-    loadCategories();
-  }, [selectedBlog, isEditMode, category]);
-
   // 전체 페이지 기본 드래그 방지 (단, 우리 업로드 영역과 에디터는 제외)
   useEffect(() => {
     const handlePageDragOver = (e: DragEvent) => {
@@ -194,8 +141,6 @@ function WritePageContent() {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     const pollElements = doc.querySelectorAll('[data-type="poll"]');
-
-    console.log("pollElements 개수:", pollElements.length);
 
     if (pollElements.length === 0) {
       return [];
@@ -244,7 +189,6 @@ function WritePageContent() {
       }
     });
 
-    console.log("추출된 polls:", polls);
     return polls;
   };
 
@@ -306,30 +250,33 @@ function WritePageContent() {
     const editorContent = editorRef.current?.getHTML?.() || postContent;
     const pollsData = extractPollsDataFromHTML(editorContent);
 
+    // draft → published 변경 시에만 publishedBy 추가
+    const isDraftToPublished = postStatus === 'draft' && status === 'published';
+    const userStr = localStorage.getItem('user');
+    const userId = userStr ? JSON.parse(userStr)?.id : null;
+
     const requestBody = {
-      action: 'update',
       blogId: selectedBlog,
       postId: editPostId,
+      categoryId: category,
       title: postTitle,
       description: postDescription,
       content: editorContent,
-      categories: [category],
-      tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
-      status: status,
-      featuredImage: featuredImage,
       langType: langType,
-      seo: {
-        metaTitle: metaTitle || postTitle,
-        metaDescription: metaDescription,
-        keywords: keywords.split(',').map(keyword => keyword.trim()).filter(Boolean),
-      },
-      ...(pollsData.length > 0 && { polls: pollsData })
+      tags: tags,
+      featuredImage: featuredImage,
+      status: status,
+      seoTitle: metaTitle || postTitle,
+      seoDescription: metaDescription,
+      seoKeywords: keywords,
+      ...(pollsData.length > 0 && { polls: pollsData }),
+      ...(isDraftToPublished && userId && { publishedBy: userId })
     };
 
     console.log(`📤 포스트 ${status === 'draft' ? '수정 저장' : '수정 발행'} 요청:`, requestBody);
 
-    const response = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/post', {
-      method: 'POST',
+    const response = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/updatePost', {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,

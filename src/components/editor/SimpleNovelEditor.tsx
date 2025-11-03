@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { uploadImageToStorage } from '@/lib/firebase/storage';
 
 interface SimpleNovelEditorProps {
   initialContent?: string;
@@ -11,11 +10,11 @@ interface SimpleNovelEditorProps {
   className?: string;
 }
 
-export default function SimpleNovelEditor({ 
-  initialContent = "", 
+export default function SimpleNovelEditor({
+  initialContent = "",
   onSave,
   blogId,
-  className 
+  className
 }: SimpleNovelEditorProps) {
   const [content, setContent] = useState(initialContent);
   const [isSaving, setIsSaving] = useState(false);
@@ -23,7 +22,7 @@ export default function SimpleNovelEditor({
   // 자동 저장 (3초마다)
   useEffect(() => {
     if (!content || !onSave) return;
-    
+
     const timer = setTimeout(() => {
       setIsSaving(true);
       onSave(content);
@@ -34,19 +33,7 @@ export default function SimpleNovelEditor({
   }, [content, onSave]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    uploadImageToStorage(file, blogId)
-      .then((url) => {
-        // 간단한 이미지 삽입
-        const imageHtml = `<img src="${url}" alt="업로드된 이미지" style="max-width: 100%; height: auto;" />`;
-        setContent(prev => prev + imageHtml);
-        toast.success('이미지가 업로드되었습니다');
-      })
-      .catch(() => {
-        toast.error('이미지 업로드 실패');
-      });
+    toast.info('이미지 업로드 기능은 준비 중입니다.');
   };
 
   return (

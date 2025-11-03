@@ -1,5 +1,4 @@
 // 블로그 데이터 타입 정의
-import { Timestamp } from 'firebase/firestore';
 
 // Post Status 타입
 export type PostStatus = 'draft' | 'published' | 'scheduled';
@@ -13,8 +12,8 @@ export interface Blog {
   favicon: string;
   theme: BlogTheme;
   seoSettings: SEOSettings;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: string;
+  updatedAt: string;
   ownerId: string;
   isActive: boolean;
 }
@@ -58,25 +57,24 @@ export interface Post {
   description?: string;
   slug: string;
   content: string;
-  excerpt: string;
-  featuredImage?: string | null;
-  gallery?: string[];
+  featuredImage: string | null;
   status: string;
   statusNm: string;
-  publishedAt?: Timestamp | null;
-  scheduledAt?: Timestamp | null;
-  authorId: string;
-  categories: string[];
+  categoryId: string;
   categoryNm?: string;
-  tags: string[];
+  tags: string;
   seo: PostSEO;
-  readingTime: number;
   viewCount: number;
   isFeatured?: boolean;
-  createdAt: Timestamp;
-  updatedAt: Timestamp | null;
-  createUser?: string;
-  updateUser?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  publishedAt?: string;
+  createdBy?: string;
+  createdNm?: string;
+  updatedBy?: string;
+  updatedNm?: string;
+  publishedBy?: string;
+  publishedNm?: string;
   polls?: PostPoll[];
   langType: string;
   langTypeNm?: string;
@@ -109,7 +107,7 @@ export interface Category {
     metaTitle?: string;
     metaDescription?: string;
   };
-  createdAt: Timestamp;
+  createdAt: string;
 }
 
 export interface Tag {
@@ -119,7 +117,7 @@ export interface Tag {
   slug: string;
   color: string;
   postCount: number;
-  createdAt: Timestamp;
+  createdAt: string;
 }
 
 export interface User {
@@ -129,8 +127,8 @@ export interface User {
   photoURL?: string;
   role: 'admin' | 'editor' | 'author';
   blogs: string[]; // 접근 가능한 블로그 ID 배열
-  createdAt: Timestamp;
-  lastLoginAt: Timestamp;
+  createdAt: string;
+  lastLoginAt: string;
   isActive: boolean;
 }
 
@@ -146,7 +144,7 @@ export interface MediaFile {
   alt?: string;
   caption?: string;
   uploadedBy: string;
-  createdAt: Timestamp;
+  createdAt: string;
   usedIn: string[]; // 사용된 포스트 ID 배열
 }
 
