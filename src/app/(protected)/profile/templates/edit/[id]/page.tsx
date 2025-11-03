@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import AdvancedNovelEditor, { AdvancedNovelEditorRef } from '@/components/editor/AdvancedNovelEditor';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';;
 import { getTemplateById, updateTemplateInFirestore } from '@/lib/firebase/templates';
 
 export default function EditTemplatePage() {
@@ -103,7 +103,6 @@ export default function EditTemplatePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <Toaster position="top-right" />
 
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4">

@@ -725,3 +725,109 @@ body {
 .tippy-box[data-theme~='light'] .tippy-content {
   padding: 0;
 }
+
+/* ========================================
+   AG Grid 전역 스타일
+   ======================================== */
+
+/* Grid 컨테이너 스타일 */
+.grid-container {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Compact density */
+.compact-grid.ag-theme-material {
+  --ag-grid-size: 4px;
+  --ag-list-item-height: 20px;
+  --ag-row-height: 34px;
+
+  /* 외곽 border 제거 */
+  --ag-borders: none;
+  --ag-border-color: transparent;
+  --ag-wrapper-border-radius: 0px;
+
+  /* 폰트 크기 조정 */
+  --ag-font-size: 14px;
+  font-size: 14px;
+}
+
+/* zebra stripe only */
+.compact-grid .ag-row-even {
+  background-color: #fafafa;
+}
+
+/* hover 강조 */
+.compact-grid .ag-row-hover {
+  background-color: #e6f2ff !important;
+}
+
+/* 헤더 폰트 설정 */
+.compact-grid .ag-header-cell {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* 헤더 텍스트 center 정렬 */
+.compact-grid .ag-header-cell-label {
+  justify-content: center !important;
+}
+
+/* cell 간 아주 약한 Divider + 폰트 설정 */
+.compact-grid .ag-cell {
+  border-right: 1px solid rgba(0, 0, 0, 0.04);
+  display: flex !important;
+  align-items: center !important;
+  font-size: 14px;
+  color: #374151;
+}
+
+/* ========================================
+   Sonner Toast 커스텀 스타일
+   ======================================== */
+
+/* 성공 Toast - 초록색 */
+.sonner-success {
+  background-color: #f0fdf4 !important;
+  border: 2px solid #22c55e !important;
+  color: #166534 !important;
+}
+
+.sonner-success [data-icon] {
+  color: #22c55e !important;
+}
+
+.sonner-success [data-content] {
+  font-weight: 500;
+}
+
+/* 알림 Toast - 파란색 */
+.sonner-info {
+  background-color: #eff6ff !important;
+  border: 2px solid #3b82f6 !important;
+  color: #1e40af !important;
+}
+
+.sonner-info [data-icon] {
+  color: #3b82f6 !important;
+}
+
+.sonner-info [data-content] {
+  font-weight: 500;
+}
+
+/* 오류 Toast - 빨간색 */
+.sonner-error {
+  background-color: #fef2f2 !important;
+  border: 2px solid #ef4444 !important;
+  color: #991b1b !important;
+}
+
+.sonner-error [data-icon] {
+  color: #ef4444 !important;
+}
+
+.sonner-error [data-content] {
+  font-weight: 500;
+}

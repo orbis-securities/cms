@@ -51,8 +51,9 @@ export interface PostPoll {
 }
 
 export interface Post {
-  id: string;
+  postId: string;
   blogId: string;
+  blogNm?: string;
   title: string;
   description?: string;
   slug: string;
@@ -60,11 +61,13 @@ export interface Post {
   excerpt: string;
   featuredImage?: string | null;
   gallery?: string[];
-  status: 'draft' | 'published' | 'scheduled';
+  status: string;
+  statusNm: string;
   publishedAt?: Timestamp | null;
   scheduledAt?: Timestamp | null;
   authorId: string;
   categories: string[];
+  categoryNm?: string;
   tags: string[];
   seo: PostSEO;
   readingTime: number;
@@ -75,7 +78,9 @@ export interface Post {
   createUser?: string;
   updateUser?: string | null;
   polls?: PostPoll[];
-  langType?: string;
+  langType: string;
+  langTypeNm?: string;
+  popularYn?: string;
 }
 
 export interface PostSEO {

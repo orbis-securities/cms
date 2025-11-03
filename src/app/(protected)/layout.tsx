@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import Header from '@/components/layout/Header';
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
@@ -44,5 +45,10 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   }
 
   // 인증된 상태 - 보호된 콘텐츠 표시
-  return <>{children}</>;
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <main>{children}</main>
+    </div>
+  );
 }

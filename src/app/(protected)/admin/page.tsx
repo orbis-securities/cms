@@ -22,7 +22,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <Toaster position="top-right" />
 
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">

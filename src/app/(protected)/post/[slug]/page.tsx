@@ -4,22 +4,21 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Tag, Eye, Edit, Trash2, Loader2 } from 'lucide-react';
-import { getPostById, deletePostFromFirestore } from '@/lib/firebase/posts';
 import { Post } from '@/types';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import { createRoot } from 'react-dom/client';
 import { MarketWidgetView } from '@/components/editor/MarketWidgetView';
 import { PollView } from '@/components/editor/PollView';
 import ChartView from '@/components/editor/ChartView';
 import React from 'react';
+import Button from '@/components/common/Button';
 
 export default function PostDetailPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const postId = params.postId as string;
-  const blogId = searchParams.get('blog');
-  const category = searchParams.get('category');
+  // slug는 URL 경로로만 사용 (SEO, 가독성), 실제 조회는 postId로 수행
+  const slug = params.slug as string;
   const isPreview = searchParams.get('preview') === 'true'; // 미리보기 모드 확인
 
   const [post, setPost] = useState<Post | null>(null);
@@ -27,18 +26,54 @@ export default function PostDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
+  // postId로 게시글 조회 (slug가 아닌 postId 사용)
+  const [postId, setPostId] = useState<string>('');
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+
+  useEffect(() => {
+    // sessionStorage에서 postId 가져오기
+    const storedData = sessionStorage.getItem('postDetailData');
+    if (storedData) {
+      const data = JSON.parse(storedData);
+      console.log('📦 sessionStorage에서 postId 가져옴:', data.postId);
+      setPostId(data.postId || '');
+    }
+
+    // localStorage에서 사용자 정보 가져오기
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const userData = JSON.parse(userStr);
+        setCurrentUserId(userData.id || '');
+      } catch (error) {
+        console.error('사용자 정보 파싱 실패:', error);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const loadPost = async () => {
-      if (!blogId || !postId) {
-        toast.error('블로그 ID 또는 포스트 ID가 없습니다.');
+      if (!postId) {
         setLoading(false);
         return;
       }
 
       try {
-        const postData = await getPostById(blogId, postId);
-        if (postData) {
-          setPost(postData);
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/getPost?postId=${postId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        // API 응답 데이터 콘솔에 출력
+        console.log('🔍 API 응답 전체:', data);
+        console.log('📝 포스트 데이터:', data.result);
+
+        if (data.code === "S" && data.result) {
+          setPost(data.result.post);
         } else {
           toast.error('포스트를 찾을 수 없습니다.');
         }
@@ -51,11 +86,11 @@ export default function PostDetailPage() {
     };
 
     loadPost();
-  }, [blogId, postId]);
+  }, [postId]);
 
   // 시장 위젯을 React 컴포넌트로 렌더링
   useEffect(() => {
-    if (!post || !contentRef.current) return;
+    if (!post || !contentRef.current || !post.blogId || !postId) return;
 
     const container = contentRef.current;
     const marketWidgets = container.querySelectorAll('[data-type="market-widget"]');
@@ -82,7 +117,7 @@ export default function PostDetailPage() {
 
   // 투표를 React 컴포넌트로 렌더링
   useEffect(() => {
-    if (!post || !contentRef.current || !blogId || !postId) return;
+    if (!post || !contentRef.current || !post.blogId || !postId) return;
 
     const container = contentRef.current;
     const pollNodes = container.querySelectorAll('[data-type="poll"]');
@@ -107,8 +142,8 @@ export default function PostDetailPage() {
             options: pollData.options,
             allowMultiple: pollData.allowMultiple,
             totalVotes: pollData.totalVotes,
-            blogId: blogId as string,
-            postId: postId as string,
+            blogId: post.blogId,
+            postId: postId,
           })
         );
       } else {
@@ -142,13 +177,13 @@ export default function PostDetailPage() {
             options,
             allowMultiple,
             totalVotes,
-            blogId: blogId as string,
-            postId: postId as string,
+            blogId: post.blogId,
+            postId: postId,
           })
         );
       }
     });
-  }, [post, blogId, postId]);
+  }, [post, postId]);
 
   // 차트를 React 컴포넌트로 렌더링
   useEffect(() => {
@@ -206,7 +241,7 @@ export default function PostDetailPage() {
   }, [post]);
 
   const handleDelete = async () => {
-    if (!post || !blogId) return;
+    if (!post || !post.blogId) return;
 
     // 첫 번째 확인
     if (!confirm(`정말로 "${post.title}" 포스트를 삭제하시겠습니까?`)) {
@@ -214,21 +249,32 @@ export default function PostDetailPage() {
     }
 
     // 두 번째 확인 (ID 입력)
-    const userInput = prompt(`삭제를 확인하려면 포스트 ID를 입력하세요:\n\n포스트 ID: ${post.id}`);
-    if (userInput !== post.id) {
+    const userInput = prompt(`삭제를 확인하려면 포스트 ID를 입력하세요:\n\n포스트 ID: ${post.postId}`);
+    if (userInput !== post.postId) {
       toast.error('포스트 ID가 일치하지 않습니다. 삭제가 취소되었습니다.');
       return;
     }
 
     setIsDeleting(true);
     try {
-      await deletePostFromFirestore(blogId, post.categories[0], post.id);
-      toast.success('포스트가 삭제되었습니다.');
+      // TODO: 삭제 API 구현 필요
+      // const token = localStorage.getItem('authToken');
+      // const response = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/deletePost', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'Authorization': `Bearer ${token}`,
+      //   },
+      //   body: JSON.stringify({ postId: post.postId }),
+      // });
+
+      toast.info('삭제 기능은 아직 구현되지 않았습니다.');
+      setIsDeleting(false);
 
       // 관리 페이지로 이동
-      setTimeout(() => {
-        router.push('/manage');
-      }, 1000);
+      // setTimeout(() => {
+      //   router.push('/post');
+      // }, 1000);
     } catch (error) {
       console.error('포스트 삭제 실패:', error);
       toast.error('포스트 삭제에 실패했습니다.');
@@ -276,7 +322,7 @@ export default function PostDetailPage() {
         <div className="text-center">
           <p className="text-gray-600 mb-4">포스트를 찾을 수 없습니다.</p>
           <Link
-            href="/manage"
+            href="/post"
             className="text-blue-600 hover:text-blue-800 underline"
           >
             관리 페이지로 돌아가기
@@ -286,144 +332,141 @@ export default function PostDetailPage() {
     );
   }
 
+  // 수정/삭제 권한 체크
+  const canEdit = post.createdBy === 'aiSystem' || post.createdBy === currentUserId;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <Toaster position="top-right" />
-
+    <div className="max-w-screen-2xl mx-auto px-5 py-6">
       {/* Header */}
-      {!isPreview && (
-        <header className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="max-w-5xl mx-auto flex items-center justify-between">
-            <Link
-              href="/manage"
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              목록으로
-            </Link>
-
-            <div className="flex items-center gap-2">
-              {blogId === 'axi' && (
-                <a
-                  href="https://mmtblog.vercel.app/posts/1"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 text-green-600 border border-green-600 rounded-lg hover:bg-green-50 transition-colors flex items-center gap-2"
-                >
-                  <Eye className="w-4 h-4" />
-                  AXI 페이지
-                </a>
-              )}
-              <Link
-                href={`/write?id=${post.id}&category=${post.categories[0]}&blog=${blogId}`}
-                className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-2"
-              >
-                <Edit className="w-4 h-4" />
-                수정
-              </Link>
-              <button
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isDeleting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    삭제 중...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="w-4 h-4" />
-                    삭제
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </header>
+      {!isPreview && canEdit && (
+        <div className="flex items-center justify-end gap-2 mb-4">
+          <Button
+            onClick={() => router.push(`/write?id=${postId}&category=${post.categories?.[0] || ''}&blog=${post.blogId}`)}
+            variant="ghost"
+            icon={Edit}
+          >
+            수정
+          </Button>
+          <Button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            variant="danger"
+            icon={Trash2}
+            loading={isDeleting}
+          >
+            {isDeleting ? '삭제 중...' : '삭제'}
+          </Button>
+        </div>
       )}
 
       {/* Content */}
-      <div className="max-w-5xl mx-auto p-6">
-        <div className="bg-white rounded-lg border">
-          {/* Post Header */}
-          <div className="p-8 border-b">
-            <div className="flex items-start justify-between mb-4">
-              <h1 className="text-3xl font-bold text-gray-900 flex-1">
-                {post.title}
-              </h1>
-              {getStatusBadge(post.status)}
-            </div>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        {/* Post Header */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-start justify-between mb-4">
+            <h1 className="text-2xl font-bold text-gray-900 flex-1">
+              {post.title}
+            </h1>
+            {getStatusBadge(post.status)}
+          </div>
 
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+            {/* 블로그 */}
+            {post.blogNm && (
               <div className="flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
-                <span>생성: {formatDate(post.createdAt)}</span>
+                <span className="font-medium">블로그:</span>
+                <span>{post.blogNm}</span>
               </div>
-              {post.publishedAt && (
-                <div className="flex items-center gap-1">
-                  <Eye className="w-4 h-4" />
-                  <span>발행: {formatDate(post.publishedAt)}</span>
-                </div>
-              )}
-              {post.categories && post.categories.length > 0 && (
-                <div className="flex items-center gap-1">
-                  <Tag className="w-4 h-4" />
-                  <span>{post.categories.join(', ')}</span>
-                </div>
-              )}
+            )}
+
+            {/* 카테고리 */}
+            {post.categories && post.categories.length > 0 && (
+              <div className="flex items-center gap-1">
+                <Tag className="w-4 h-4" />
+                <span>{post.categories.join(', ')}</span>
+              </div>
+            )}
+
+            {/* 언어 */}
+            {post.langTypeNm && (
+              <div className="flex items-center gap-1">
+                <span className="font-medium">언어:</span>
+                <span>{post.langTypeNm}</span>
+              </div>
+            )}
+
+            {/* 등록자 */}
+            {post.createUser && (
+              <div className="flex items-center gap-1">
+                <span className="font-medium">등록자:</span>
+                <span>{post.createUser}</span>
+              </div>
+            )}
+
+            {/* 생성일 */}
+            <div className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              <span>생성: {formatDate(post.createdAt)}</span>
             </div>
 
-            {post.tags && post.tags.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {post.tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs"
-                  >
-                    #{tag}
-                  </span>
-                ))}
+            {/* 발행일 */}
+            {post.publishedAt && (
+              <div className="flex items-center gap-1">
+                <Eye className="w-4 h-4" />
+                <span>발행: {formatDate(post.publishedAt)}</span>
               </div>
             )}
           </div>
 
-          {/* Post Content */}
-          <div className="p-8">
-            <div
-              ref={contentRef}
-              className="prose max-w-none"
-              dangerouslySetInnerHTML={{ __html: post.content }}
-            />
-          </div>
-
-          {/* SEO Info */}
-          {post.seo && (
-            <div className="p-8 border-t bg-gray-50">
-              <h3 className="text-lg font-semibold mb-4">SEO 정보</h3>
-              <div className="space-y-3">
-                {post.seo.metaTitle && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-700">메타 제목:</span>
-                    <p className="text-gray-900 mt-1">{post.seo.metaTitle}</p>
-                  </div>
-                )}
-                {post.seo.metaDescription && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-700">메타 설명:</span>
-                    <p className="text-gray-900 mt-1">{post.seo.metaDescription}</p>
-                  </div>
-                )}
-                {post.seo.keywords && post.seo.keywords.length > 0 && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-700">키워드:</span>
-                    <p className="text-gray-900 mt-1">{post.seo.keywords.join(', ')}</p>
-                  </div>
-                )}
-              </div>
+          {post.tags && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {post.tags.split(',').map((tag, index) => (
+                <span
+                  key={index}
+                  className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs"
+                >
+                  #{tag.trim()}
+                </span>
+              ))}
             </div>
           )}
         </div>
+
+        {/* Post Content */}
+        <div className="p-6">
+          <div
+            ref={contentRef}
+            className="prose max-w-none"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+        </div>
+
+        {/* SEO Info */}
+        {post.seo && (
+          <div className="p-6 border-t border-gray-200 bg-gray-50">
+            <h3 className="text-lg font-semibold mb-4">SEO 정보</h3>
+            <div className="space-y-3">
+              {post.seo.metaTitle && (
+                <div>
+                  <span className="text-sm font-medium text-gray-700">메타 제목:</span>
+                  <p className="text-gray-900 mt-1">{post.seo.metaTitle}</p>
+                </div>
+              )}
+              {post.seo.metaDescription && (
+                <div>
+                  <span className="text-sm font-medium text-gray-700">메타 설명:</span>
+                  <p className="text-gray-900 mt-1">{post.seo.metaDescription}</p>
+                </div>
+              )}
+              {post.seo.keywords && post.seo.keywords.length > 0 && (
+                <div>
+                  <span className="text-sm font-medium text-gray-700">키워드:</span>
+                  <p className="text-gray-900 mt-1">{post.seo.keywords.join(', ')}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

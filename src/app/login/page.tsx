@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Lock, Mail, Loader2 } from 'lucide-react';
-import { signInWithEmail } from '@/lib/firebase/auth';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -23,10 +22,74 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      await signInWithEmail(email, password);
+      const response = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      // 디버깅용 로그
+      console.log('Login response:', {
+        status: response.status,
+        ok: response.ok,
+        data
+      });
+
+      if (!response.ok || data.code !== "S") {
+        throw new Error(data.message || '로그인에 실패했습니다.');
+      }
+
+      // 로그인 성공 시 토큰 저장
+      const accessToken = data.result?.accessToken;
+      const refreshToken = data.result?.refreshToken;
+
+      if (accessToken) {
+        localStorage.setItem('authToken', accessToken);
+        // 쿠키에도 저장 (middleware에서 사용)
+        document.cookie = `authToken=${accessToken}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7일
+      }
+
+      // refreshToken이 있으면 저장
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+      }
+
+      // 사용자 정보 저장
+      if (data.result?.user) {
+        localStorage.setItem('user', JSON.stringify(data.result.user));
+      }
+
+      // 공통 코드 조회 및 저장
+      try {
+        const commonCodeResponse = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/getCommonCode', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+        const commonCodeData = await commonCodeResponse.json();
+
+        if (commonCodeData.code === "S" && commonCodeData.result) {
+          localStorage.setItem('commonCode', JSON.stringify(commonCodeData.result.codes));
+          console.log('✅ 공통 코드 저장 완료:', commonCodeData.result);
+        }
+      } catch (error) {
+        console.error('공통 코드 조회 실패:', error);
+        // 공통 코드 조회 실패해도 로그인은 진행
+      }
+
       toast.success('로그인 성공!');
-      router.push('/'); // 메인 페이지로 리다이렉트
+
+      // 쿠키가 설정된 후 강제 리다이렉트
+      window.location.href = '/post';
     } catch (error) {
+      console.error('Login error:', error);
       toast.error(error instanceof Error ? error.message : '로그인에 실패했습니다.');
     } finally {
       setLoading(false);
@@ -34,17 +97,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Toaster position="top-right" />
-
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 w-full max-w-md">
         {/* 헤더 */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
             <Lock className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">CMS 로그인</h1>
-          <p className="text-gray-600 mt-2">관리자 계정으로 로그인하세요</p>
+          <p className="text-gray-500 mt-2">관리자 계정으로 로그인하세요</p>
         </div>
 
         {/* 로그인 폼 */}
@@ -61,7 +122,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@example.com"
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                 disabled={loading}
                 required
               />
@@ -80,7 +141,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="비밀번호를 입력하세요"
-                className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                 disabled={loading}
                 required
               />
@@ -103,7 +164,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading || !email.trim() || !password.trim()}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? (
               <>
@@ -115,20 +176,6 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-
-        {/* 안내 메시지 */}
-        <div className="mt-8 text-center">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-blue-900 mb-2">
-              관리자 전용
-            </h3>
-            <p className="text-xs text-blue-700">
-              이 페이지는 인증된 관리자만 접근할 수 있습니다.
-              <br />
-              계정이 없으시면 시스템 관리자에게 문의해주세요.
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );
