@@ -33,11 +33,12 @@ export const SlashCommand = Extension.create({
   },
 });
 
-export const getSuggestionItems = ({ query, editor, onImageUpload, onAIButtonClick }: {
+export const getSuggestionItems = ({ query, editor, onImageUpload, onAIButtonClick, simpleMode = false }: {
   query: string;
   editor: any;
   onImageUpload?: (file: File) => Promise<string>;
   onAIButtonClick?: () => void;
+  simpleMode?: boolean;
 }): CommandItem[] => {
   const items: CommandItem[] = [
     {
@@ -415,7 +416,12 @@ export const getSuggestionItems = ({ query, editor, onImageUpload, onAIButtonCli
     },
   ];
 
-  return items.filter(item =>
+  // simpleMode일 때 고급 기능 제외
+  const filteredItems = simpleMode
+    ? items.filter(item => !['시장 위젯', '투표', '차트'].includes(item.title))
+    : items;
+
+  return filteredItems.filter(item =>
     item.title.toLowerCase().includes(query.toLowerCase())
   );
 };

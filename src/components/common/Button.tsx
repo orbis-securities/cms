@@ -25,7 +25,7 @@ const Button: React.FC<ButtonProps> = ({
   className = '',
 }) => {
   // 기본 스타일
-  const baseStyles = 'rounded-lg transition-colors flex items-center gap-2 font-medium';
+  const baseStyles = 'rounded-lg transition-all duration-200 flex items-center gap-2 font-medium shadow-sm hover:shadow-md active:scale-95';
 
   // 크기별 스타일
   const sizeStyles = {
@@ -36,14 +36,14 @@ const Button: React.FC<ButtonProps> = ({
 
   // variant별 스타일
   const variantStyles = {
-    primary: 'text-white bg-blue-600 border border-blue-600 hover:bg-blue-700',
-    secondary: 'text-gray-600 border border-gray-300 hover:bg-gray-50',
-    ghost: 'text-blue-600 border border-blue-600 hover:bg-blue-50',
-    danger: 'text-red-600 border border-red-600 hover:bg-red-50',
+    primary: 'text-white bg-blue-600 border border-blue-600 hover:bg-blue-700 hover:border-blue-700 hover:-translate-y-0.5',
+    secondary: 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:-translate-y-0.5',
+    ghost: 'text-blue-600 bg-white border border-blue-600 hover:bg-blue-50 hover:border-blue-700 hover:-translate-y-0.5',
+    danger: 'text-red-600 bg-white border border-red-600 hover:bg-red-50 hover:border-red-700 hover:-translate-y-0.5',
   };
 
   // disabled 스타일
-  const disabledStyles = 'opacity-50 cursor-not-allowed';
+  const disabledStyles = 'opacity-50 cursor-not-allowed hover:transform-none hover:shadow-sm';
 
   const combinedClassName = `
     ${baseStyles}

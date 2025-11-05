@@ -24,6 +24,7 @@ export default function PostDetailPage() {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   // postId로 게시글 조회 (slug가 아닌 postId 사용)
@@ -122,10 +123,32 @@ export default function PostDetailPage() {
     pollNodes.forEach((pollNode) => {
       const pollId = pollNode.getAttribute('data-poll-id') || '';
 
-      // HTML 속성 대신 post.polls 배열에서 데이터 사용
-      const pollData = post.polls?.find(p => p.pollId === pollId);
+      // post.polls 데이터 사용 (배열 또는 단일 객체 모두 처리)
+      let pollData: any = null;
+
+      if (post.polls) {
+        if (Array.isArray(post.polls)) {
+          // 배열인 경우 find 사용
+          pollData = post.polls.find((p: any) => p.pollId === pollId);
+        } else {
+          // 단일 객체인 경우 - pollId가 일치하거나 pollId가 없으면 해당 데이터 사용
+          const singlePoll = post.polls as any;
+          if (singlePoll.pollId === pollId || !singlePoll.pollId) {
+            pollData = singlePoll;
+          }
+        }
+      }
 
       if (pollData) {
+        // API 응답 형식을 PollView 형식으로 변환
+        const options = pollData.options?.map((opt: any) => ({
+          text: opt.optionName || opt.text,
+          votes: opt.vote ?? opt.votes ?? 0
+        })) || [];
+
+        const totalVotes = options.reduce((sum: number, opt: any) => sum + opt.votes, 0);
+        const allowMultiple = pollData.pollType === 'multiple' || pollData.allowMultiple === true;
+
         // React 컴포넌트를 렌더링할 컨테이너 생성
         const reactContainer = document.createElement('div');
         pollNode.replaceWith(reactContainer);
@@ -136,11 +159,12 @@ export default function PostDetailPage() {
           React.createElement(PollView, {
             pollId: pollData.pollId,
             question: pollData.question,
-            options: pollData.options,
-            allowMultiple: pollData.allowMultiple,
-            totalVotes: pollData.totalVotes,
+            options: options,
+            allowMultiple: allowMultiple,
+            totalVotes: totalVotes,
             blogId: post.blogId,
             postId: postId,
+            readOnly: true,
           })
         );
       } else {
@@ -176,6 +200,7 @@ export default function PostDetailPage() {
             totalVotes,
             blogId: post.blogId,
             postId: postId,
+            readOnly: true,
           })
         );
       }
@@ -218,13 +243,14 @@ export default function PostDetailPage() {
     });
   }, [post]);
 
-  // 이미지 width 적용
+  // 이미지 width 적용 및 에러 핸들링
   useEffect(() => {
     if (!post || !contentRef.current) return;
 
     const container = contentRef.current;
-    const imageWrappers = container.querySelectorAll('.image-wrapper[data-width]');
 
+    // width 적용
+    const imageWrappers = container.querySelectorAll('.image-wrapper[data-width]');
     imageWrappers.forEach((wrapper) => {
       const width = wrapper.getAttribute('data-width');
       const img = wrapper.querySelector('img');
@@ -235,46 +261,76 @@ export default function PostDetailPage() {
         img.style.height = 'auto';
       }
     });
+
+    // 모든 이미지 에러 핸들링
+    const allImages = container.querySelectorAll('img');
+    allImages.forEach((img) => {
+      // 이미 핸들러가 추가된 이미지는 스킵
+      if (img.hasAttribute('data-error-handled')) return;
+
+      img.setAttribute('data-error-handled', 'true');
+      img.setAttribute('loading', 'lazy');
+
+      // 에러 시 재시도 로직
+      img.onerror = function(this: HTMLImageElement) {
+        const retryCount = parseInt(this.getAttribute('data-retry-count') || '0');
+
+        if (retryCount < 2) {
+          // 2번까지 재시도
+          this.setAttribute('data-retry-count', (retryCount + 1).toString());
+          const src = this.src;
+          this.src = '';
+          setTimeout(() => {
+            this.src = src + (src.includes('?') ? '&' : '?') + 't=' + Date.now();
+          }, 1000 * (retryCount + 1));
+        } else {
+          // 재시도 실패 시 placeholder 표시
+          this.style.display = 'none';
+          const placeholder = document.createElement('div');
+          placeholder.className = 'bg-gray-100 border border-gray-300 rounded p-4 text-center text-gray-500';
+          placeholder.innerHTML = '<p>이미지를 불러올 수 없습니다</p>';
+          this.parentNode?.insertBefore(placeholder, this);
+        }
+      };
+    });
   }, [post]);
 
-  const handleDelete = async () => {
-    if (!post || !post.blogId) return;
+  const handleDelete = () => {
+    setShowDeleteModal(true);
+  };
 
-    // 첫 번째 확인
-    if (!confirm(`정말로 "${post.title}" 포스트를 삭제하시겠습니까?`)) {
-      return;
-    }
+  const confirmDelete = async () => {
+    console.log("post", post)
 
-    // 두 번째 확인 (ID 입력)
-    const userInput = prompt(`삭제를 확인하려면 포스트 ID를 입력하세요:\n\n포스트 ID: ${post.postId}`);
-    if (userInput !== post.postId) {
-      toast.error('포스트 ID가 일치하지 않습니다. 삭제가 취소되었습니다.');
-      return;
-    }
-
+    if (!post || !post.postId) return;
     setIsDeleting(true);
+
     try {
-      // TODO: 삭제 API 구현 필요
-      // const token = localStorage.getItem('authToken');
-      // const response = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/deletePost', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${token}`,
-      //   },
-      //   body: JSON.stringify({ postId: post.postId }),
-      // });
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/deletePost', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ postId: post.postId }),
+      });
 
-      toast.info('삭제 기능은 아직 구현되지 않았습니다.');
-      setIsDeleting(false);
+      const result = await response.json();
 
-      // 관리 페이지로 이동
-      // setTimeout(() => {
-      //   router.push('/post');
-      // }, 1000);
+      if (response.ok && result.code === 'S') {
+        toast.success('포스트가 삭제되었습니다.');
+        setShowDeleteModal(false);
+        // 포스트 관리 페이지로 이동
+        setTimeout(() => {
+          router.push('/post');
+        }, 500);
+      } else {
+        throw new Error(result.message || '포스트 삭제에 실패했습니다.');
+      }
     } catch (error) {
       console.error('포스트 삭제 실패:', error);
-      toast.error('포스트 삭제에 실패했습니다.');
+      toast.error(error instanceof Error ? error.message : '포스트 삭제에 실패했습니다.');
       setIsDeleting(false);
     }
   };
@@ -375,50 +431,80 @@ export default function PostDetailPage() {
             {getStatusBadge(post.status)}
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-            {/* 블로그 */}
-            {post.blogNm && (
-              <div className="flex items-center gap-1">
-                <span className="font-medium">블로그:</span>
-                <span>{post.blogNm}</span>
-              </div>
-            )}
+          <div className="space-y-3">
+            {/* 블로그, 카테고리, 언어 */}
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+              {/* 블로그 */}
+              {post.blogNm && (
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">블로그:</span>
+                  <span>{post.blogNm}</span>
+                </div>
+              )}
 
-            {/* 카테고리 */}
-            {post.categoryNm && (
-              <div className="flex items-center gap-1">
-                <Tag className="w-4 h-4" />
-                <span>{post.categoryNm}</span>
-              </div>
-            )}
+              {/* 카테고리 */}
+              {post.categoryNm && (
+                <div className="flex items-center gap-1">
+                  <Tag className="w-4 h-4" />
+                  <span>{post.categoryNm}</span>
+                </div>
+              )}
 
-            {/* 언어 */}
-            {post.langTypeNm && (
-              <div className="flex items-center gap-1">
-                <span className="font-medium">언어:</span>
-                <span>{post.langTypeNm}</span>
-              </div>
-            )}
-
-            {/* 작성자 */}
-            {post.createdNm && (
-              <div className="flex items-center gap-1">
-                <span className="font-medium">작성자:</span>
-                <span>{post.createdNm}</span>
-              </div>
-            )}
-
-            {/* 생성일 */}
-            <div className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              <span>생성: {formatDate(post.createdAt)}</span>
+              {/* 언어 */}
+              {post.langTypeNm && (
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">언어:</span>
+                  <span>{post.langTypeNm}</span>
+                </div>
+              )}
             </div>
 
-            {/* 발행일 */}
-            {post.publishedAt && (
+            {/* 생성 정보 */}
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-1">
-                <Eye className="w-4 h-4" />
-                <span>발행: {formatDate(post.publishedAt)}</span>
+                <Calendar className="w-4 h-4" />
+                <span className="font-medium">생성일:</span>
+                <span>{formatDate(post.createdAt)}</span>
+              </div>
+              {post.createdNm && (
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">생성자:</span>
+                  <span>{post.createdNm}</span>
+                </div>
+              )}
+            </div>
+
+            {/* 수정 정보 */}
+            {post.updatedAt && (
+              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  <span className="font-medium">수정일:</span>
+                  <span>{formatDate(post.updatedAt)}</span>
+                </div>
+                {post.updatedNm && (
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium">수정자:</span>
+                    <span>{post.updatedNm}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 발행 정보 */}
+            {post.publishedAt && (
+              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-1">
+                  <Eye className="w-4 h-4" />
+                  <span className="font-medium">발행일:</span>
+                  <span>{formatDate(post.publishedAt)}</span>
+                </div>
+                {post.publishedNm && (
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium">발행자:</span>
+                    <span>{post.publishedNm}</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -473,6 +559,46 @@ export default function PostDetailPage() {
           </div>
         )}
       </div>
+
+      {/* 삭제 확인 모달 */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4">
+            {/* 배경 오버레이 */}
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={() => !isDeleting && setShowDeleteModal(false)}
+            />
+
+            {/* 모달 컨텐츠 */}
+            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-sm p-6 z-10">
+              <p className="text-gray-900 text-center mb-6">
+                삭제된 포스트는 복구할 수 없습니다.<br />
+                삭제하시겠습니까?
+              </p>
+
+              <div className="flex justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={isDeleting}
+                  className="px-6 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  disabled={isDeleting}
+                  className="px-6 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDeleting ? '삭제 중...' : '삭제'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

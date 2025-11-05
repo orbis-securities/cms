@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
-export function useImageUpload(blogId: string) {
+export function useImageUpload() {
   const [isImageUploading, setIsImageUploading] = useState(false);
 
   const handleImageUpload = useCallback(async (file: File): Promise<string> => {
@@ -39,7 +39,7 @@ export function useImageUpload(blogId: string) {
     } finally {
       setIsImageUploading(false);
     }
-  }, [blogId]);
+  }, []);
 
   return {
     isImageUploading,

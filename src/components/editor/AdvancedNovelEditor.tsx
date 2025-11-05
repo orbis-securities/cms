@@ -58,7 +58,6 @@ lowlight.register('html', xml);
 interface AdvancedNovelEditorProps {
   initialContent?: string;
   onSave?: (content: string) => void;
-  blogId: string;
   selectedBlog?: string;
   availableBlogs?: { blogId: string, displayName: string }[];
   onBlogChange?: (blogId: string) => void;
@@ -66,6 +65,7 @@ interface AdvancedNovelEditorProps {
   className?: string;
   onSetFeatured?: (imageUrl: string) => void;
   featuredImage?: string;
+  simpleMode?: boolean; // 차트, 투표, 환율 위젯 제거
 }
 
 export interface AdvancedNovelEditorRef {
@@ -77,14 +77,14 @@ export interface AdvancedNovelEditorRef {
 const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEditorProps>(({
   initialContent = "",
   onSave,
-  blogId,
   selectedBlog,
   availableBlogs = [],
   onBlogChange,
   getDesignSettings,
   className,
   onSetFeatured,
-  featuredImage
+  featuredImage,
+  simpleMode = false
 }: AdvancedNovelEditorProps, ref) => {
   const [content, setContent] = useState(initialContent);
   const [isSaving, setIsSaving] = useState(false);
@@ -108,7 +108,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
   const [currentBlockquoteAlignment, setCurrentBlockquoteAlignment] = useState<'left' | 'center' | 'right'>('center');
 
   // 분리된 훅들 사용
-  const { isImageUploading, handleImageUpload } = useImageUpload(blogId);
+  const { isImageUploading, handleImageUpload } = useImageUpload();
   const { recentTextColors, addRecentTextColor } = useRecentColors();
 
   // TipTap Editor 설정
@@ -130,9 +130,8 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       }),
       CustomBlockquote,
       CustomHorizontalRule,
-      MarketWidget,
-      PollExtension,
-      ChartExtension,
+      // simpleMode일 때는 고급 기능 제외
+      ...(!simpleMode ? [MarketWidget, PollExtension, ChartExtension] : []),
       ResizableImage.configure({
         HTMLAttributes: {
           class: 'max-w-full h-auto cursor-pointer',
@@ -304,6 +303,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
             editor,
             onImageUpload: handleImageUpload,
             onAIButtonClick: handleAIButtonClick,
+            simpleMode,
           }),
           render: renderItems,
         },

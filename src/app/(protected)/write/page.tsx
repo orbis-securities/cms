@@ -9,7 +9,8 @@ import {
   Send,
   FileText,
   X,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';;
 import SpellCheckPanel from '@/components/editor/SpellCheckPanel';
@@ -42,9 +43,23 @@ function WritePageContent() {
   const [featuredImage, setFeaturedImage] = useState('');
   const [langType, setLangType] = useState('ko');
   const [postStatus, setPostStatus] = useState<'draft' | 'published'>('draft');
+  const [postSlug, setPostSlug] = useState('');
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
   const editorRef = useRef<AdvancedNovelEditorRef>(null);
 
   // 블로그 목록은 CommonCodeSelect에서 자동으로 처리됨
+
+  // 템플릿에서 내용 불러오기
+  useEffect(() => {
+    const templateContent = localStorage.getItem('templateContent');
+    if (templateContent && !isEditMode) {
+      setPostContent(templateContent);
+      // 사용 후 제거
+      localStorage.removeItem('templateContent');
+    }
+  }, [isEditMode]);
 
   // 수정 모드일 때 포스트 데이터 로드
   useEffect(() => {
@@ -71,6 +86,7 @@ function WritePageContent() {
             setTags(post.tags || '');
             setLangType(post.langType || 'ko');
             setPostStatus(post.status || 'draft');
+            setPostSlug(post.slug || '');
 
             // 블로그와 카테고리 설정
             if (post.blogId) {
@@ -192,6 +208,24 @@ function WritePageContent() {
     return polls;
   };
 
+  // 타이틀 이미지와 일치하는 img 태그에 속성 추가
+  const addFeaturedImageAttributes = (htmlContent: string, featuredImageUrl: string) => {
+    if (!featuredImageUrl) return htmlContent;
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, 'text/html');
+    const imgElements = doc.querySelectorAll('img');
+
+    imgElements.forEach((img) => {
+      const src = img.getAttribute('src');
+      if (src && src === featuredImageUrl) {
+        img.setAttribute('data-featured-image', 'true');
+      }
+    });
+
+    return doc.body.innerHTML;
+  };
+
   // 게시글 생성 함수
   const createPost = async (status: 'draft' | 'published') => {
     const token = localStorage.getItem('authToken');
@@ -199,7 +233,8 @@ function WritePageContent() {
       throw new Error('로그인이 필요합니다.');
     }
 
-    const editorContent = editorRef.current?.getHTML?.() || postContent;
+    let editorContent = editorRef.current?.getHTML?.() || postContent;
+    editorContent = addFeaturedImageAttributes(editorContent, featuredImage);
     const pollsData = extractPollsDataFromHTML(editorContent);
 
     const requestBody = {
@@ -247,7 +282,8 @@ function WritePageContent() {
       throw new Error('로그인이 필요합니다.');
     }
 
-    const editorContent = editorRef.current?.getHTML?.() || postContent;
+    let editorContent = editorRef.current?.getHTML?.() || postContent;
+    editorContent = addFeaturedImageAttributes(editorContent, featuredImage);
     const pollsData = extractPollsDataFromHTML(editorContent);
 
     // draft → published 변경 시에만 publishedBy 추가
@@ -329,6 +365,14 @@ function WritePageContent() {
         // 수정 모드
         await updatePost('draft');
         toast.success('포스트가 수정되었습니다! 📝');
+
+        // sessionStorage에 postDetailData 저장
+        sessionStorage.setItem('postDetailData', JSON.stringify({
+          postId: editPostId,
+        }));
+
+        // 상세 페이지로 이동
+        router.push(`/post/${postSlug}`);
       } else {
         // 새 글 모드
         const result = await createPost('draft');
@@ -391,6 +435,14 @@ function WritePageContent() {
         // 수정 모드
         await updatePost('published');
         toast.success('포스트가 수정 발행되었습니다! 🎉');
+
+        // sessionStorage에 postDetailData 저장
+        sessionStorage.setItem('postDetailData', JSON.stringify({
+          postId: editPostId,
+        }));
+
+        // 상세 페이지로 이동
+        router.push(`/post/${postSlug}`);
       } else {
         // 새 글 모드
         const result = await createPost('published');
@@ -425,9 +477,71 @@ function WritePageContent() {
     toast.success('타이틀 이미지가 설정되었습니다.');
   };
 
-  // 템플릿 모달 열기 - TODO: 템플릿 API 구현 필요
+  // 템플릿 목록 불러오기
+  const loadTemplates = async () => {
+    setLoadingTemplates(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/getTemplates', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+
+      if (data.code === 'S' && data.result) {
+        setTemplates(data.result.templates || []);
+      }
+    } catch (error) {
+      console.error('템플릿 로드 실패:', error);
+      toast.error('템플릿을 불러오는데 실패했습니다.');
+    } finally {
+      setLoadingTemplates(false);
+    }
+  };
+
+  // 템플릿 모달 열기
   const handleOpenTemplateModal = async () => {
-    toast.info('템플릿 기능은 준비 중입니다.');
+    setShowTemplateModal(true);
+    await loadTemplates();
+  };
+
+  // 템플릿 적용
+  const handleApplyTemplate = async (templateId: string, templateTitle: string) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(
+        `https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/getTemplate?templateId=${templateId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.code === 'S' && data.result) {
+        const templateContent = data.result.template.content;
+        setPostContent(templateContent);
+
+        // 에디터에 직접 설정
+        if (editorRef.current?.chain) {
+          const chain = editorRef.current.chain();
+          if (chain && typeof chain === 'object' && 'focus' in chain) {
+            (chain as any).focus().setContent(templateContent).run();
+          }
+        }
+
+        toast.success(`"${templateTitle}" 템플릿을 불러왔습니다.`);
+        setShowTemplateModal(false);
+      } else {
+        toast.error(data.message || '템플릿을 불러오는데 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('템플릿 조회 실패:', error);
+      toast.error('템플릿을 불러오는데 실패했습니다.');
+    }
   };
 
   // 맞춤법 수정 적용
@@ -556,7 +670,6 @@ function WritePageContent() {
                     key={editPostId || 'new'} // 수정 모드일 때 postId로 key 설정하여 리마운트
                     initialContent={postContent}
                     onSave={handleSave}
-                    blogId="demo-blog"
                     selectedBlog={selectedBlog}
                     onBlogChange={setSelectedBlog}
                     onSetFeatured={handleSetFeatured}
@@ -751,6 +864,84 @@ function WritePageContent() {
         getContent={() => editorRef.current?.getHTML?.() || postContent}
         onApplyFix={handleApplySpellFix}
       />
+
+      {/* 템플릿 선택 모달 */}
+      {showTemplateModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4">
+            {/* 배경 오버레이 */}
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={() => setShowTemplateModal(false)}
+            />
+
+            {/* 모달 컨텐츠 */}
+            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden z-10">
+              {/* 모달 헤더 */}
+              <div className="p-6 border-b border-gray-200">
+                <h3 className="text-lg font-bold text-gray-900">
+                  템플릿 선택
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  사용할 템플릿을 선택하세요
+                </p>
+              </div>
+
+              {/* 모달 바디 */}
+              <div className="p-6 overflow-y-auto max-h-[60vh]">
+                {loadingTemplates ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                  </div>
+                ) : templates.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">저장된 템플릿이 없습니다.</p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      프로필 &gt; 템플릿 설정에서 템플릿을 추가하세요.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {templates.map((template) => (
+                      <button
+                        key={template.templateId}
+                        onClick={() => handleApplyTemplate(template.templateId, template.title)}
+                        className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <FileText className="w-5 h-5 text-gray-400 group-hover:text-blue-600" />
+                          <div className="text-left">
+                            <p className="font-medium text-gray-900 group-hover:text-blue-600">
+                              {template.title}
+                            </p>
+                            {template.createdAt && (
+                              <p className="text-xs text-gray-500">
+                                {new Date(template.createdAt).toLocaleDateString('ko-KR')}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 모달 푸터 */}
+              <div className="p-6 border-t border-gray-200">
+                <button
+                  onClick={() => setShowTemplateModal(false)}
+                  className="w-full px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

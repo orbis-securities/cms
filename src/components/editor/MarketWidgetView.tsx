@@ -31,7 +31,7 @@ interface MarketWidgetViewProps {
   symbols?: string[] | null;
 }
 
-export const MarketWidgetView: React.FC<MarketWidgetViewProps> = ({ type = 'coins', symbols = null }) => {
+export const MarketWidgetView: React.FC<MarketWidgetViewProps> = React.memo(({ type = 'coins', symbols = null }) => {
   const [marketData, setMarketData] = useState<MarketData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -113,13 +113,6 @@ export const MarketWidgetView: React.FC<MarketWidgetViewProps> = ({ type = 'coin
   const formatChange = (change: number) => {
     const formatted = Math.abs(change).toFixed(2);
     return change >= 0 ? `+${formatted}%` : `-${formatted}%`;
-  };
-
-  const getTimeAgo = () => {
-    const seconds = Math.floor((new Date().getTime() - lastUpdate.getTime()) / 1000);
-    if (seconds < 60) return `${seconds}초 전`;
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes}분 전`;
   };
 
   if (isLoading) {
@@ -223,6 +216,8 @@ export const MarketWidgetView: React.FC<MarketWidgetViewProps> = ({ type = 'coin
       </div>
     </div>
   );
-};
+});
+
+MarketWidgetView.displayName = 'MarketWidgetView';
 
 export default MarketWidgetView;

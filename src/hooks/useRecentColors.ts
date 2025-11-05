@@ -12,13 +12,8 @@ export function useRecentColors() {
     });
   }, []);
 
-  const clearRecentTextColors = useCallback(() => {
-    setRecentTextColors([]);
-  }, []);
-
   return {
     recentTextColors,
-    addRecentTextColor,
-    clearRecentTextColors
+    addRecentTextColor
   };
 }

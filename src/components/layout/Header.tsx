@@ -2,13 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  Home,
   PenTool,
   FolderOpen,
-  User,
   Settings,
   LogOut,
   Menu,
@@ -33,13 +32,15 @@ export default function Header() {
       <div className="max-w-screen-2xl mx-auto px-5">
         <div className="flex items-center justify-between h-16">
           {/* 로고 */}
-          <Link href="/post" className="flex items-center space-x-2 group">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-700 transition-colors">
-              <Home className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-              CMS
-            </span>
+          <Link href="/post" className="flex items-center group">
+            <Image
+              src="/logo/Orbis_Logo_Black.png"
+              alt="Orbis CMS"
+              width={120}
+              height={40}
+              className="h-8 w-auto object-contain"
+              priority
+            />
           </Link>
 
           {/* 데스크톱 네비게이션 */}
@@ -69,7 +70,7 @@ export default function Header() {
           {/* 사용자 정보 & 로그아웃 */}
           <div className="hidden md:flex items-center space-x-4">
             <Link href="/profile" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
-              <span className="font-medium text-gray-900 hover:text-blue-600">{user?.email}</span>
+              <span className="font-medium text-gray-900 hover:text-blue-600">{user?.name || user?.email}님, 안녕하세요.</span>
             </Link>
             <button
               onClick={logout}
@@ -124,7 +125,7 @@ export default function Header() {
           {/* 모바일 사용자 정보 */}
           <div className="px-4 py-4 border-t border-gray-200 space-y-3">
             <Link href="/profile" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-gray-600">
-              <span className="font-medium text-gray-900">{user?.email}</span>
+              <span className="font-medium text-gray-900">{user?.name || user?.email}님, 안녕하세요.</span>
             </Link>
             <button
               onClick={logout}

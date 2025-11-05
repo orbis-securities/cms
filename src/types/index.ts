@@ -43,6 +43,7 @@ export interface SEOSettings {
 
 export interface PostPoll {
   pollId: string;
+  pollType: string;
   question: string;
   options: { text: string; votes: number }[];
   allowMultiple: boolean;
@@ -94,7 +95,8 @@ export interface PostSEO {
   noFollow?: boolean;
 }
 
-export interface Category {
+// 블로그 카테고리 (기존)
+export interface BlogCategory {
   id: string;
   blogId: string;
   name: string;
@@ -108,6 +110,60 @@ export interface Category {
     metaDescription?: string;
   };
   createdAt: string;
+}
+
+// 카테고리 관리 페이지용 타입
+export interface Category {
+  blogId: string;
+  blogNm?: string;
+  categoryId: string;
+  name: string;
+  sortOrder: number;
+  useYn: string;
+  useYnNm?: string;
+  createdAt?: string;
+  createdBy?: string;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+// 블로그 디자인 설정
+export interface BlogDesignSettings {
+  fontFamily: string;
+  heading: { fontSize: string; color: string };
+  subheading: { fontSize: string; color: string };
+  list: { fontSize: string; color: string };
+  highlight: { fontSize: string; color: string };
+  description: { fontSize: string; color: string };
+  textTone: string;
+}
+
+// 템플릿 타입
+export interface Template {
+  templateId: string;
+  title: string;
+  content: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// 배너 타입
+export interface Banner {
+  blogId: string;
+  blogNm?: string;
+  bannerId: string;
+  bannerName: string;
+  positionCode: string;
+  positionCodeNm?: string;
+  imageUrl: string;
+  linkUrl: string;
+  langType: string;
+  langTypeNm?: string;
+  viewOrder: number;
+  createdAt?: string;
+  createdBy?: string;
+  updatedAt?: string;
+  updatedBy?: string;
 }
 
 export interface Tag {

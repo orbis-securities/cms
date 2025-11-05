@@ -783,6 +783,11 @@ body {
   color: #374151;
 }
 
+/* 셀 센터 정렬 */
+.compact-grid .ag-cell.ag-cell-center {
+  justify-content: center !important;
+}
+
 /* ========================================
    Sonner Toast 커스텀 스타일
    ======================================== */

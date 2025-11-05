@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { Star } from 'lucide-react';
 import { AgGridReact } from 'ag-grid-react';
@@ -11,7 +11,6 @@ import { Post } from '@/types';
 import CommonCodeSelect from '@/components/common/CommonCodeSelect';
 import CategorySelect from '@/components/common/CategorySelect';
 import { toast } from 'sonner';
-import Button from '@/components/common/Button';
 
 // AG Grid 모듈 등록
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -51,30 +50,18 @@ export default function ManagePosts() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
 
-  const postsPerPage = 10;
+  const postsPerPage = 20;
 
-  // 검색 조건이 변경될 때마다 sessionStorage에 저장
+  // 검색 조건이 변경될 때마다 sessionStorage에 저장 (combined for performance)
   useEffect(() => {
     sessionStorage.setItem('manage_selectedBlog', selectedBlog);
-  }, [selectedBlog]);
-
-  useEffect(() => {
     sessionStorage.setItem('manage_selectedCategory', selectedCategory);
-  }, [selectedCategory]);
-
-  useEffect(() => {
     sessionStorage.setItem('manage_selectedStatus', selectedStatus);
-  }, [selectedStatus]);
-
-  useEffect(() => {
     sessionStorage.setItem('manage_selectedLanguage', selectedLanguage);
-  }, [selectedLanguage]);
-
-  useEffect(() => {
     sessionStorage.setItem('manage_searchKeyword', searchKeyword);
-  }, [searchKeyword]);
+  }, [selectedBlog, selectedCategory, selectedStatus, selectedLanguage, searchKeyword]);
 
   useEffect(() => {
     if (posts.length > 0) {
@@ -85,12 +72,13 @@ export default function ManagePosts() {
   // 초기 로드 시 검색 실행
   useEffect(() => {
     if (selectedBlog) {
-      handleSearch();
+      handleSearch(1);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 빈 배열로 마운트 시 한 번만 실행
 
   // 포스트 검색
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async (page: number = 1) => {
     if (!selectedBlog) {
       alert('먼저 블로그를 선택해주세요.');
       return;
@@ -101,6 +89,8 @@ export default function ManagePosts() {
       const token = localStorage.getItem('authToken');
       const params = new URLSearchParams({
         blogId: selectedBlog,
+        page: page.toString(),
+        pageSize: postsPerPage.toString(),
       });
 
       if (selectedCategory.trim()) params.append('categoryId', selectedCategory.trim());
@@ -118,8 +108,15 @@ export default function ManagePosts() {
       if (data.code === "S" && data.result) {
         const postsArray = data.result.posts || [];
         setPosts(postsArray);
-        setHasMore(data.result.hasMore || false);
-        setCurrentPage(1);
+
+        // pagination 객체에서 정보 추출
+        if (data.result.pagination) {
+          setTotalCount(data.result.pagination.total || 0);
+          setCurrentPage(data.result.pagination.page || page);
+        } else {
+          setTotalCount(0);
+          setCurrentPage(page);
+        }
       }
     } catch (error) {
       console.error('포스트 검색 실패:', error);
@@ -127,25 +124,21 @@ export default function ManagePosts() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedBlog, selectedCategory, selectedStatus, selectedLanguage, searchKeyword]);
 
   // 인기 게시글 토글
-  const handleToggleFeatured = async (post: Post) => {
+  const handleToggleFeatured = useCallback(async (post: Post) => {
     try {
       const token = localStorage.getItem('authToken');
 
       // popularYn이 'Y'이면 제거, 아니면 추가
       if (post.popularYn === 'Y') {
         // 인기 게시글 제거
-        const response = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/removePopularPost', {
-          method: 'POST',
+        const response = await fetch(`https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/removePopularPost?postId=${post.postId}`, {
+          method: 'DELETE',
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            postId: post.postId,
-          }),
         });
 
         const data = await response.json();
@@ -196,7 +189,7 @@ export default function ManagePosts() {
       console.error('인기 게시글 설정 실패:', error);
       toast.error('인기 게시글 설정에 실패했습니다.');
     }
-  };
+  }, []);
 
   // AG Grid 컬럼 정의
   const columnDefs = useMemo<ColDef<Post>[]>(() => [
@@ -205,6 +198,7 @@ export default function ManagePosts() {
       headerName: '인기',
       width: 100,
       sortable: true,
+      cellClass: 'ag-cell-center',
       cellRenderer: (params: any) => (
         <div className="flex items-center justify-center h-full">
           <button
@@ -232,7 +226,7 @@ export default function ManagePosts() {
       field: 'blogNm',
       headerName: '블로그',
       minWidth: 80,
-      cellStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center' }
+      cellClass: 'ag-cell-center'
     },
     {
       field: 'title',
@@ -270,23 +264,23 @@ export default function ManagePosts() {
       headerName: '언어',
       width: 100,
       sortable: true,
-      cellStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center' }
+      cellClass: 'ag-cell-center'
     },
     {
       field: 'statusNm',
       headerName: '상태',
       width: 120,
       sortable: true,
-      cellStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center' }
+      cellClass: 'ag-cell-center'
     },
     {
       field: 'createdAt',
       headerName: '생성일',
       width: 180,
       sortable: true,
-      cellStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center' }
+      cellClass: 'ag-cell-center'
     },
-  ], [selectedBlog]);
+  ], [handleToggleFeatured]);
 
   const defaultColDef = useMemo<ColDef>(() => ({
     resizable: true,
@@ -351,28 +345,26 @@ export default function ManagePosts() {
               className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg"
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch(1)}
             />
           </div>
 
           {/* 검색 버튼 - 1 */}
           <div className="sm:col-span-2 lg:col-span-1 flex items-end">
-            <Button
-              onClick={handleSearch}
+            <button
+              onClick={() => handleSearch(1)}
               disabled={!selectedBlog || loading}
-              variant="primary"
-              loading={loading}
-              className="w-full h-10 justify-center"
+              className="w-full h-10 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? '검색 중...' : '검색'}
-            </Button>
+            </button>
           </div>
         </div>
       </div>
 
       {/* AG Grid 테이블 */}
       <div className="grid-container">
-          <div className="ag-theme-material compact-grid" style={{ height: 'calc(100vh - 280px)', width: '100%' }}>
+          <div className="ag-theme-material compact-grid" style={{ height: 'calc(100vh - 340px)', width: '100%' }}>
             <AgGridReact
               rowData={posts}
               columnDefs={columnDefs}
@@ -387,12 +379,49 @@ export default function ManagePosts() {
           </div>
       </div>
 
-      {/* 안내 메시지 */}
-      <div className="mt-2">
-        <p className="text-xs text-gray-500">
-          ℹ️ 인기 게시글은 언어별로 최대 3개씩 설정할 수 있습니다.
-        </p>
-      </div>
+      {/* 페이징 UI */}
+      {posts.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mt-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              총 {totalCount.toLocaleString()}개 중 {((currentPage - 1) * postsPerPage) + 1}-{Math.min(currentPage * postsPerPage, totalCount)}개 표시
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleSearch(1)}
+                disabled={currentPage === 1 || loading}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                처음
+              </button>
+              <button
+                onClick={() => handleSearch(currentPage - 1)}
+                disabled={currentPage === 1 || loading}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                이전
+              </button>
+              <span className="px-3 py-1.5 text-sm font-medium">
+                {currentPage} / {Math.ceil(totalCount / postsPerPage)}
+              </span>
+              <button
+                onClick={() => handleSearch(currentPage + 1)}
+                disabled={currentPage >= Math.ceil(totalCount / postsPerPage) || loading}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                다음
+              </button>
+              <button
+                onClick={() => handleSearch(Math.ceil(totalCount / postsPerPage))}
+                disabled={currentPage >= Math.ceil(totalCount / postsPerPage) || loading}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                마지막
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
