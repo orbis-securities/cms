@@ -17,7 +17,7 @@ interface TemplateEditorModalProps {
   onSaveSuccess: () => void;
   onTitleChange: (title: string) => void;
   onContentChange: (content: string) => void;
-  editorRef: React.RefObject<AdvancedNovelEditorRef>;
+  editorRef: React.RefObject<AdvancedNovelEditorRef | null>;
 }
 
 const SUPABASE_URL = 'https://onfwfuixsubpwftdwqea.supabase.co/functions/v1';
