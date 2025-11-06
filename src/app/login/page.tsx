@@ -112,8 +112,6 @@ export default function LoginPage() {
               priority
             />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">CMS 로그인</h1>
-          <p className="text-gray-500 mt-2">관리자 계정으로 로그인하세요</p>
         </div>
 
         {/* 로그인 폼 */}
