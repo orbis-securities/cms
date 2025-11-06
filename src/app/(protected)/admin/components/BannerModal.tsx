@@ -9,7 +9,7 @@ import { Banner } from '@/types';
 const SUPABASE_URL = 'https://onfwfuixsubpwftdwqea.supabase.co/functions/v1';
 
 // 클라이언트 전용 필드를 포함한 타입
-interface BannerFormData extends Omit<Banner, 'bannerId' | 'bannerName' | 'imageUrl'> {
+interface BannerFormData extends Omit<Banner, 'bannerId' | 'bannerName' | 'imageUrl' | 'useYn'> {
   bannerId?: string;
   bannerName?: string;
   imageUrl?: string;

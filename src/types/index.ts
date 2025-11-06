@@ -160,6 +160,8 @@ export interface Banner {
   langType: string;
   langTypeNm?: string;
   viewOrder: number;
+  useYn: string;
+  useYnNm?: string;
   createdAt?: string;
   createdBy?: string;
   updatedAt?: string;
