@@ -55,7 +55,7 @@ export default function TemplateList({
   }, [user?.id]);
 
   // 템플릿 내용으로 글쓰기 페이지로 이동
-  const handleGoToWrite = async (templateId: string, templateTitle: string) => {
+  const handleGoToWrite = useCallback(async (templateId: string, templateTitle: string) => {
     if (!user?.id) {
       toast.error('사용자 정보를 찾을 수 없습니다.');
       return;
@@ -87,10 +87,10 @@ export default function TemplateList({
       console.error('템플릿 조회 실패:', error);
       toast.error('템플릿을 불러오는데 실패했습니다.');
     }
-  };
+  }, [user?.id, router]);
 
   // 체크박스 토글
-  const handleToggleSelect = (templateId: string) => {
+  const handleToggleSelect = useCallback((templateId: string) => {
     setSelectedTemplates(prev => {
       const newSet = new Set(prev);
       if (newSet.has(templateId)) {
@@ -100,16 +100,16 @@ export default function TemplateList({
       }
       return newSet;
     });
-  };
+  }, []);
 
   // 전체 선택/해제
-  const handleToggleSelectAll = () => {
+  const handleToggleSelectAll = useCallback(() => {
     if (selectedTemplates.size === templates.length) {
       setSelectedTemplates(new Set());
     } else {
       setSelectedTemplates(new Set(templates.map(t => t.templateId)));
     }
-  };
+  }, [selectedTemplates.size, templates]);
 
   // 선택된 템플릿 삭제
   const handleDeleteSelected = async () => {

@@ -90,7 +90,7 @@ export default function CategorySelect({
     };
 
     loadCategories();
-  }, [blogId]);
+  }, [blogId, isInitialLoad, onChange]);
 
   // 카테고리 목록이 로드된 후 initialCategoryId가 있으면 자동 설정
   useEffect(() => {

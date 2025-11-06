@@ -116,7 +116,7 @@ export default function PostDetailPage() {
         })
       );
     });
-  }, [post]);
+  }, [post, postId]);
 
   // 투표를 React 컴포넌트로 렌더링
   useEffect(() => {

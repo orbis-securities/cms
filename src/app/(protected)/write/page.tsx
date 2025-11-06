@@ -223,7 +223,7 @@ function WritePageContent() {
       const imgSrc = srcMatch ? srcMatch[1] : '';
 
       // 먼저 기존 data-featured-image 속성 제거
-      let cleanedAttributes = attributes.replace(/\s*data-featured-image="true"/g, '');
+      const cleanedAttributes = attributes.replace(/\s*data-featured-image="true"/g, '');
 
       // featuredImageUrl과 일치하면 data-featured-image 속성을 img 태그 바로 뒤에 추가
       if (imgSrc === featuredImageUrl) {
