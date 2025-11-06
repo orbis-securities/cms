@@ -20,7 +20,7 @@ interface TemplateEditorModalProps {
   editorRef: React.RefObject<AdvancedNovelEditorRef | null>;
 }
 
-const SUPABASE_URL = 'https://onfwfuixsubpwftdwqea.supabase.co/functions/v1';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL;
 
 export default function TemplateEditorModal({
   isOpen,

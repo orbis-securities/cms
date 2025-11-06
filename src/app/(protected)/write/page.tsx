@@ -69,7 +69,7 @@ function WritePageContent() {
         setIsLoading(true);
         try {
           const token = localStorage.getItem('authToken');
-          const response = await fetch(`https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/getPost?postId=${editPostId}`, {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/getPost?postId=${editPostId}`, {
             headers: {
               'Authorization': `Bearer ${token}`,
             },
@@ -262,7 +262,7 @@ function WritePageContent() {
 
     console.log(`📤 포스트 ${status === 'draft' ? '저장' : '발행'} 요청:`, requestBody);
 
-    const response = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/createPost', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/createPost`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -317,7 +317,7 @@ function WritePageContent() {
 
     console.log(`📤 포스트 ${status === 'draft' ? '수정 저장' : '수정 발행'} 요청:`, requestBody);
 
-    const response = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/updatePost', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/updatePost`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -488,7 +488,7 @@ function WritePageContent() {
     setLoadingTemplates(true);
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/getTemplates', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/getTemplates`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -517,7 +517,7 @@ function WritePageContent() {
     try {
       const token = localStorage.getItem('authToken');
       const response = await fetch(
-        `https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/getTemplate?templateId=${templateId}`,
+        `${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/getTemplate?templateId=${templateId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,

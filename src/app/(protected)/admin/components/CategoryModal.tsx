@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import CommonCodeSelect from '@/components/common/CommonCodeSelect';
 import { Category } from '@/types';
 
-const SUPABASE_URL = 'https://onfwfuixsubpwftdwqea.supabase.co/functions/v1';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL;
 
 interface CategoryModalProps {
   isOpen: boolean;

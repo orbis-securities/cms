@@ -23,7 +23,7 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const response = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/login', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -69,7 +69,7 @@ export default function LoginPage() {
 
       // 공통 코드 조회 및 저장
       try {
-        const commonCodeResponse = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/getCommonCode', {
+        const commonCodeResponse = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/getCommonCode`, {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
           },

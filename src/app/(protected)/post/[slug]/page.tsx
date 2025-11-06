@@ -65,7 +65,7 @@ export default function PostDetailPage() {
 
       try {
         const token = localStorage.getItem('authToken');
-        const response = await fetch(`https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/getPost?postId=${postId}&langType=ko`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/getPost?postId=${postId}&langType=ko`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -359,7 +359,7 @@ export default function PostDetailPage() {
 
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/deletePost', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/deletePost`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

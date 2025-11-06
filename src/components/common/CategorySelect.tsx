@@ -54,7 +54,7 @@ export default function CategorySelect({
       try {
         const token = localStorage.getItem('authToken');
         const response = await fetch(
-          `https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/getCategories?blogId=${blogId}`,
+          `${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/getCategories?blogId=${blogId}`,
           {
             headers: {
               'Authorization': `Bearer ${token}`,

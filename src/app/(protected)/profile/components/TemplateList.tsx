@@ -15,7 +15,7 @@ interface TemplateListProps {
   refreshTrigger?: number; // 템플릿 저장 후 새로고침용
 }
 
-const SUPABASE_URL = 'https://onfwfuixsubpwftdwqea.supabase.co/functions/v1';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL;
 
 export default function TemplateList({
   onEditTemplate,

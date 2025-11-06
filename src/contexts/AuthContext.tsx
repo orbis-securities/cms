@@ -96,7 +96,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       console.log('🔄 토큰 갱신 시도...');
 
-      const response = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/refreshToken', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/refreshToken`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

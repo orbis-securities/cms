@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import CommonCodeSelect from '@/components/common/CommonCodeSelect';
 import { Banner } from '@/types';
 
-const SUPABASE_URL = 'https://onfwfuixsubpwftdwqea.supabase.co/functions/v1';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL;
 
 // 클라이언트 전용 필드를 포함한 타입
 interface BannerFormData extends Omit<Banner, 'bannerId' | 'bannerName' | 'imageUrl' | 'useYn'> {

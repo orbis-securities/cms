@@ -16,7 +16,7 @@ import { Category } from '@/types';
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-const SUPABASE_URL = 'https://onfwfuixsubpwftdwqea.supabase.co/functions/v1';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL;
 
 export default function CategoryManagement() {
   // 필터링 상태

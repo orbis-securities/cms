@@ -115,7 +115,7 @@ export default function ManagePosts() {
       params.append('isMine', isMine.toString());
       params.append('isAutomated', (!isAutomated).toString()); // 자동화 제외 체크 시 false
 
-      const response = await fetch(`https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/getPosts?${params.toString()}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/getPosts?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -151,7 +151,7 @@ export default function ManagePosts() {
       // popularYn이 'Y'이면 제거, 아니면 추가
       if (post.popularYn === 'Y') {
         // 인기 게시글 제거
-        const response = await fetch(`https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/removePopularPost?postId=${post.postId}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/removePopularPost?postId=${post.postId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -174,7 +174,7 @@ export default function ManagePosts() {
         }
       } else {
         // 인기 게시글 추가
-        const response = await fetch('https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/addPopularPost', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/addPopularPost`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

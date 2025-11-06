@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import CommonCodeSelect from '@/components/common/CommonCodeSelect';
 
-const SUPABASE_URL = 'https://onfwfuixsubpwftdwqea.supabase.co/functions/v1';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL;
 
 interface CategoryTranslationModalProps {
   isOpen: boolean;
