@@ -22,6 +22,7 @@ export default function PageBannerSetting() {
   const [selectedBlog, setSelectedBlog] = useState<string>('');
   const [selectedPage, setSelectedPage] = useState<string>('');
   const [selectedLang, setSelectedLang] = useState<string>('');
+  const [selectedUseYn, setSelectedUseYn] = useState<string>('');
 
   // 모달 상태
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,6 +51,9 @@ export default function PageBannerSetting() {
       if (selectedLang) {
         params.append('langType', selectedLang);
       }
+      if (selectedUseYn) {
+        params.append('useYn', selectedUseYn);
+      }
 
       const response = await fetch(`${SUPABASE_URL}/getBanners?${params.toString()}`, {
         headers: {
@@ -65,7 +69,7 @@ export default function PageBannerSetting() {
       console.error('배너 목록 로드 실패:', error);
       toast.error('배너 목록을 불러오는데 실패했습니다.');
     }
-  }, [selectedBlog, selectedPage, selectedLang]);
+  }, [selectedBlog, selectedPage, selectedLang, selectedUseYn]);
 
   const handleSearch = useCallback(() => {
     loadBanners();
@@ -209,6 +213,13 @@ export default function PageBannerSetting() {
       width: 70,
       sortable: true,
       cellClass: 'ag-cell-center'
+    },
+    {
+      field: 'useYnNm',
+      headerName: '사용여부',
+      width: 100,
+      sortable: true,
+      cellClass: 'ag-cell-center'
     }
   ], [handleEditBanner]);
 
@@ -259,6 +270,22 @@ export default function PageBannerSetting() {
               value={selectedPage}
               onChange={setSelectedPage}
               placeholder="위치 선택"
+              showAll={true}
+              allLabel="전체"
+              className="w-full h-10"
+            />
+          </div>
+
+          {/* 사용여부 선택 */}
+          <div className="sm:col-span-1 lg:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              사용여부
+            </label>
+            <CommonCodeSelect
+              groupCode="USE_YN"
+              value={selectedUseYn}
+              onChange={setSelectedUseYn}
+              placeholder="사용여부 선택"
               showAll={true}
               allLabel="전체"
               className="w-full h-10"

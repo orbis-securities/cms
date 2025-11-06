@@ -514,7 +514,9 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
         const img = target.tagName === 'IMG' ? target as HTMLImageElement : target.closest('img') as HTMLImageElement;
         if (img) {
           // 타이틀 이미지 프리뷰 영역의 이미지는 툴바 표시하지 않음
-          if (img.hasAttribute('data-featured-preview') || img.classList.contains('featured-image-preview')) {
+          if (img.hasAttribute('data-featured-preview') ||
+              img.hasAttribute('data-featured-image') ||
+              img.classList.contains('featured-image-preview')) {
             console.log('🖼️ 타이틀 이미지 프리뷰 클릭 - 툴바 표시 안함');
             return;
           }

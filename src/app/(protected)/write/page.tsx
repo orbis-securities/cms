@@ -47,6 +47,7 @@ function WritePageContent() {
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [initialCategoryId, setInitialCategoryId] = useState<string>(''); // 초기 카테고리 ID (수정 모드용)
   const editorRef = useRef<AdvancedNovelEditorRef>(null);
 
   // 블로그 목록은 CommonCodeSelect에서 자동으로 처리됨
@@ -88,14 +89,6 @@ function WritePageContent() {
             setPostStatus(post.status || 'draft');
             setPostSlug(post.slug || '');
 
-            // 블로그와 카테고리 설정
-            if (post.blogId) {
-              setSelectedBlog(post.blogId);
-            }
-            if (post.categoryId) {
-              setCategory(post.categoryId);
-            }
-
             // SEO 설정
             setMetaTitle(post.seo?.metaTitle || '');
             setMetaDescription(post.seo?.metaDescription || '');
@@ -104,6 +97,14 @@ function WritePageContent() {
             // 타이틀 이미지 설정
             if (post.featuredImage) {
               setFeaturedImage(post.featuredImage);
+            }
+
+            // 블로그와 카테고리 설정
+            if (post.blogId) {
+              setSelectedBlog(post.blogId);
+            }
+            if (post.categoryId) {
+              setInitialCategoryId(post.categoryId); // CategorySelect에서 처리
             }
           } else {
             console.warn('⚠️ 포스트를 찾을 수 없음');
@@ -210,20 +211,27 @@ function WritePageContent() {
 
   // 타이틀 이미지와 일치하는 img 태그에 속성 추가
   const addFeaturedImageAttributes = (htmlContent: string, featuredImageUrl: string) => {
-    if (!featuredImageUrl) return htmlContent;
+    if (!featuredImageUrl) {
+      // featuredImageUrl이 없으면 모든 data-featured-image 속성 제거
+      return htmlContent.replace(/\s*data-featured-image="true"/g, '');
+    }
 
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlContent, 'text/html');
-    const imgElements = doc.querySelectorAll('img');
+    // 정규식으로 img 태그를 찾아서 속성 추가
+    return htmlContent.replace(/<img([^>]*?)>/gi, (match, attributes) => {
+      // src 속성에서 URL 추출
+      const srcMatch = attributes.match(/src="([^"]*)"/);
+      const imgSrc = srcMatch ? srcMatch[1] : '';
 
-    imgElements.forEach((img) => {
-      const src = img.getAttribute('src');
-      if (src && src === featuredImageUrl) {
-        img.setAttribute('data-featured-image', 'true');
+      // 먼저 기존 data-featured-image 속성 제거
+      let cleanedAttributes = attributes.replace(/\s*data-featured-image="true"/g, '');
+
+      // featuredImageUrl과 일치하면 data-featured-image 속성을 img 태그 바로 뒤에 추가
+      if (imgSrc === featuredImageUrl) {
+        return `<img data-featured-image="true"${cleanedAttributes}>`;
       }
-    });
 
-    return doc.body.innerHTML;
+      return `<img${cleanedAttributes}>`;
+    });
   };
 
   // 게시글 생성 함수
@@ -245,7 +253,6 @@ function WritePageContent() {
       content: editorContent,
       langType: langType,
       tags: tags,
-      featuredImage: featuredImage,
       status: status,
       seoTitle: metaTitle || postTitle,
       seoDescription: metaDescription,
@@ -300,7 +307,6 @@ function WritePageContent() {
       content: editorContent,
       langType: langType,
       tags: tags,
-      featuredImage: featuredImage,
       status: status,
       seoTitle: metaTitle || postTitle,
       seoDescription: metaDescription,
@@ -741,6 +747,7 @@ function WritePageContent() {
                     placeholder="카테고리를 선택하세요"
                     showAll={false}
                     disabled={!selectedBlog}
+                    initialCategoryId={initialCategoryId}
                   />
                 </div>
 

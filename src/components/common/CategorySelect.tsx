@@ -17,6 +17,7 @@ interface CategorySelectProps {
   className?: string;
   showAll?: boolean;
   allLabel?: string;
+  initialCategoryId?: string; // 수정 모드에서 초기 카테고리 ID
 }
 
 export default function CategorySelect({
@@ -28,9 +29,11 @@ export default function CategorySelect({
   className = '',
   showAll = true,
   allLabel = '전체',
+  initialCategoryId = '',
 }: CategorySelectProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     // blogId가 없거나 빈 문자열이면 초기화
@@ -42,7 +45,11 @@ export default function CategorySelect({
     // 카테고리 로드
     const loadCategories = async () => {
       setLoading(true);
-      onChange(''); // 블로그 변경 시 카테고리 선택 초기화
+
+      // 초기 로드가 아닐 때만 카테고리 선택 초기화 (사용자가 블로그를 변경한 경우)
+      if (!isInitialLoad) {
+        onChange('');
+      }
 
       try {
         const token = localStorage.getItem('authToken');
@@ -78,11 +85,23 @@ export default function CategorySelect({
         setCategories([]);
       } finally {
         setLoading(false);
+        setIsInitialLoad(false);
       }
     };
 
     loadCategories();
   }, [blogId]);
+
+  // 카테고리 목록이 로드된 후 initialCategoryId가 있으면 자동 설정
+  useEffect(() => {
+    if (categories.length > 0 && initialCategoryId && !value) {
+      // 카테고리 목록에 initialCategoryId가 존재하는지 확인
+      const categoryExists = categories.some(cat => cat.categoryId === initialCategoryId);
+      if (categoryExists) {
+        onChange(initialCategoryId);
+      }
+    }
+  }, [categories, initialCategoryId, value, onChange]);
 
   return (
     <select

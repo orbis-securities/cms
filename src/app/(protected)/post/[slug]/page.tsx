@@ -26,6 +26,7 @@ export default function PostDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const fetchedRef = useRef(false); // 중복 fetch 방지
 
   // postId로 게시글 조회 (slug가 아닌 postId 사용)
   // sessionStorage에서 초기값 바로 읽기 (리렌더링 방지)
@@ -49,6 +50,9 @@ export default function PostDetailPage() {
   });
 
   useEffect(() => {
+    // 이미 fetch를 실행했다면 스킵
+    if (fetchedRef.current) return;
+
     const loadPost = async () => {
       if (!postId) {
         console.log('⚠️ postId가 없습니다.');
@@ -57,6 +61,7 @@ export default function PostDetailPage() {
       }
 
       console.log('📦 postId:', postId);
+      fetchedRef.current = true; // fetch 실행 표시
 
       try {
         const token = localStorage.getItem('authToken');
@@ -271,6 +276,39 @@ export default function PostDetailPage() {
       img.setAttribute('data-error-handled', 'true');
       img.setAttribute('loading', 'lazy');
 
+      // QUIC 프로토콜 오류 방지를 위한 속성 추가
+      img.setAttribute('crossorigin', 'anonymous');
+      img.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+
+      // HTTP/2로 폴백을 위해 fetch로 이미지 미리 로드
+      const originalSrc = img.getAttribute('src');
+      if (originalSrc) {
+        fetch(originalSrc, {
+          mode: 'cors',
+          credentials: 'omit',
+          referrerPolicy: 'no-referrer-when-downgrade'
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Image load failed');
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          const objectURL = URL.createObjectURL(blob);
+          img.src = objectURL;
+
+          // 메모리 누수 방지
+          img.onload = () => {
+            URL.revokeObjectURL(objectURL);
+          };
+        })
+        .catch(() => {
+          // fetch 실패 시 기존 방식으로 폴백
+          img.src = originalSrc;
+        });
+      }
+
       // 에러 시 재시도 로직
       img.onerror = function(this: HTMLImageElement) {
         const retryCount = parseInt(this.getAttribute('data-retry-count') || '0');
@@ -278,10 +316,24 @@ export default function PostDetailPage() {
         if (retryCount < 2) {
           // 2번까지 재시도
           this.setAttribute('data-retry-count', (retryCount + 1).toString());
-          const src = this.src;
+          const src = originalSrc || this.src;
           this.src = '';
           setTimeout(() => {
-            this.src = src + (src.includes('?') ? '&' : '?') + 't=' + Date.now();
+            // 재시도 시 fetch로 다시 시도
+            fetch(src, {
+              mode: 'cors',
+              credentials: 'omit',
+              cache: 'reload'
+            })
+            .then(response => response.blob())
+            .then(blob => {
+              const objectURL = URL.createObjectURL(blob);
+              this.src = objectURL;
+              this.onload = () => URL.revokeObjectURL(objectURL);
+            })
+            .catch(() => {
+              this.src = src + (src.includes('?') ? '&' : '?') + 't=' + Date.now();
+            });
           }, 1000 * (retryCount + 1));
         } else {
           // 재시도 실패 시 placeholder 표시

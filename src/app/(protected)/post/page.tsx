@@ -47,6 +47,18 @@ export default function ManagePosts() {
     }
     return '';
   });
+  const [isMine, setIsMine] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('manage_isMine') === 'true';
+    }
+    return false;
+  });
+  const [isAutomated, setIsAutomated] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('manage_isAutomated') === 'true';
+    }
+    return false;
+  });
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -61,7 +73,9 @@ export default function ManagePosts() {
     sessionStorage.setItem('manage_selectedStatus', selectedStatus);
     sessionStorage.setItem('manage_selectedLanguage', selectedLanguage);
     sessionStorage.setItem('manage_searchKeyword', searchKeyword);
-  }, [selectedBlog, selectedCategory, selectedStatus, selectedLanguage, searchKeyword]);
+    sessionStorage.setItem('manage_isMine', isMine.toString());
+    sessionStorage.setItem('manage_isAutomated', isAutomated.toString());
+  }, [selectedBlog, selectedCategory, selectedStatus, selectedLanguage, searchKeyword, isMine, isAutomated]);
 
   useEffect(() => {
     if (posts.length > 0) {
@@ -71,32 +85,35 @@ export default function ManagePosts() {
 
   // 초기 로드 시 검색 실행
   useEffect(() => {
-    if (selectedBlog) {
-      handleSearch(1);
-    }
+    handleSearch(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 빈 배열로 마운트 시 한 번만 실행
 
+  // 체크박스 변경 시 자동 검색
+  useEffect(() => {
+    handleSearch(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMine, isAutomated]);
+
   // 포스트 검색
   const handleSearch = useCallback(async (page: number = 1) => {
-    if (!selectedBlog) {
-      alert('먼저 블로그를 선택해주세요.');
-      return;
-    }
-
     setLoading(true);
     try {
       const token = localStorage.getItem('authToken');
       const params = new URLSearchParams({
-        blogId: selectedBlog,
         page: page.toString(),
         pageSize: postsPerPage.toString(),
       });
 
+      if (selectedBlog.trim()) params.append('blogId', selectedBlog.trim());
       if (selectedCategory.trim()) params.append('categoryId', selectedCategory.trim());
       if (selectedStatus.trim()) params.append('status', selectedStatus.trim());
       if (selectedLanguage.trim()) params.append('langType', selectedLanguage.trim());
       if (searchKeyword.trim()) params.append('searchKeyword', searchKeyword.trim());
+
+      // 체크박스는 항상 값 전송
+      params.append('isMine', isMine.toString());
+      params.append('isAutomated', (!isAutomated).toString()); // 자동화 제외 체크 시 false
 
       const response = await fetch(`https://onfwfuixsubpwftdwqea.supabase.co/functions/v1/getPosts?${params.toString()}`, {
         headers: {
@@ -124,7 +141,7 @@ export default function ManagePosts() {
     } finally {
       setLoading(false);
     }
-  }, [selectedBlog, selectedCategory, selectedStatus, selectedLanguage, searchKeyword]);
+  }, [selectedBlog, selectedCategory, selectedStatus, selectedLanguage, searchKeyword, isMine, isAutomated]);
 
   // 인기 게시글 토글
   const handleToggleFeatured = useCallback(async (post: Post) => {
@@ -294,7 +311,7 @@ export default function ManagePosts() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
           {/* 블로그 선택 - 2 */}
           <div className="sm:col-span-1 lg:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">블로그 *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">블로그</label>
             <CommonCodeSelect
               groupCode="BLOG_ID"
               value={selectedBlog}
@@ -353,7 +370,7 @@ export default function ManagePosts() {
           <div className="sm:col-span-2 lg:col-span-1 flex items-end">
             <button
               onClick={() => handleSearch(1)}
-              disabled={!selectedBlog || loading}
+              disabled={loading}
               className="w-full h-10 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? '검색 중...' : '검색'}
@@ -362,9 +379,33 @@ export default function ManagePosts() {
         </div>
       </div>
 
+      {/* 필터 체크박스 */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-4">
+        <div className="flex items-center gap-6">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isMine}
+              onChange={(e) => setIsMine(e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">내가 쓴 글만 보기</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isAutomated}
+              onChange={(e) => setIsAutomated(e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">자동화 제외</span>
+          </label>
+        </div>
+      </div>
+
       {/* AG Grid 테이블 */}
       <div className="grid-container">
-          <div className="ag-theme-material compact-grid" style={{ height: 'calc(100vh - 340px)', width: '100%' }}>
+          <div className="ag-theme-material compact-grid" style={{ height: 'calc(100vh - 400px)', width: '100%' }}>
             <AgGridReact
               rowData={posts}
               columnDefs={columnDefs}

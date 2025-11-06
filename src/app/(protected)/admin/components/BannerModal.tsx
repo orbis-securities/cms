@@ -13,6 +13,7 @@ interface BannerFormData extends Omit<Banner, 'bannerId' | 'bannerName' | 'image
   bannerId?: string;
   bannerName?: string;
   imageUrl?: string;
+  useYn?: string;
   imageFile: File | null;
   imagePreview: string;
 }
@@ -37,6 +38,7 @@ export default function BannerModal({
     langType: '',
     linkUrl: '',
     viewOrder: 0,
+    useYn: 'Y',
     imageFile: null,
     imagePreview: ''
   });
@@ -45,6 +47,7 @@ export default function BannerModal({
     if (editData) {
       setFormData({
         ...editData,
+        useYn: editData.useYn || 'Y',
         imageFile: null,
         imagePreview: editData.imageUrl || ''
       });
@@ -56,6 +59,7 @@ export default function BannerModal({
         langType: '',
         linkUrl: '',
         viewOrder: 0,
+        useYn: 'Y',
         imageFile: null,
         imagePreview: ''
       });
@@ -131,7 +135,8 @@ export default function BannerModal({
         positionCode: formData.positionCode,
         linkUrl: formData.linkUrl || '',
         langType: formData.langType,
-        viewOrder: formData.viewOrder || 0
+        viewOrder: formData.viewOrder || 0,
+        useYn: formData.useYn || 'Y'
       };
 
       // 수정 모드일 때는 bannerId 추가
@@ -176,6 +181,7 @@ export default function BannerModal({
       langType: '',
       linkUrl: '',
       viewOrder: 0,
+      useYn: 'Y',
       imageFile: null,
       imagePreview: ''
     });
@@ -295,6 +301,27 @@ export default function BannerModal({
                 placeholder="순서를 입력하세요"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+            </div>
+
+            {/* 사용여부 선택 (수정 모드일 때만 변경 가능) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                사용여부 <span className="text-red-500">*</span>
+              </label>
+              <CommonCodeSelect
+                groupCode="USE_YN"
+                value={formData.useYn || 'Y'}
+                onChange={(value) => setFormData({ ...formData, useYn: value })}
+                placeholder="사용여부 선택"
+                showAll={false}
+                className="w-full"
+                disabled={!editData}
+              />
+              {!editData && (
+                <p className="text-xs text-gray-500 mt-1">
+                  등록 시에는 사용(Y)으로 자동 설정됩니다.
+                </p>
+              )}
             </div>
 
             {/* 이미지 파일 선택 */}

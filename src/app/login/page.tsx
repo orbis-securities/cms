@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Eye, EyeOff, Lock, Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -101,8 +102,15 @@ export default function LoginPage() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 w-full max-w-md">
         {/* 헤더 */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-white" />
+          <div className="flex items-center justify-center mx-auto mb-4">
+            <Image
+              src="/logo/Orbis_Logo_Black.png"
+              alt="Orbis CMS"
+              width={150}
+              height={50}
+              className="h-12 w-auto object-contain"
+              priority
+            />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">CMS 로그인</h1>
           <p className="text-gray-500 mt-2">관리자 계정으로 로그인하세요</p>
