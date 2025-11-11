@@ -1,91 +1,100 @@
-@import "tailwindcss";
+/* ========================================
+   TipTap Editor Custom Styles
+   다른 프로젝트에 적용 가능한 독립 스타일시트
+   ======================================== */
 
-/* Highlight.js 스타일 */
-@import 'highlight.js/styles/github.css';
+/* ========================================
+   필수 외부 라이브러리 Import
+   ======================================== */
+@import 'highlight.js/styles/github.css';  /* 코드 하이라이팅 */
+@import 'tippy.js/dist/tippy.css';         /* 툴팁 */
 
-/* Tippy.js 스타일 */
-@import 'tippy.js/dist/tippy.css';
+/* ========================================
+   1. Prose 스타일 (렌더링용)
+   ======================================== */
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-/* Prose 스타일 커스터마이징 */
 .prose {
-  @apply text-gray-800 leading-relaxed;
-  /* 마진 상쇄 방지 */
-  display: flow-root; /* BFC 생성 */
+  color: #1f2937;
+  line-height: 1.75;
 }
 
-/* 첫 번째와 마지막 자식의 마진 제거 */
-.prose > *:first-child {
-  margin-top: 0 !important;
-}
-
-.prose > *:last-child {
-  margin-bottom: 0 !important;
-}
-
+/* 제목 스타일 */
 .prose h1 {
-  @apply text-3xl font-bold text-gray-900;
-  margin-top: 2rem;
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #111827;
   margin-bottom: 1rem;
 }
 
 .prose h2 {
-  @apply text-2xl font-semibold text-gray-900;
-  margin-top: 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
   margin-bottom: 0.75rem;
 }
 
 .prose h3 {
-  @apply text-xl font-semibold text-gray-900;
-  margin-top: 1.25rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
   margin-bottom: 0.5rem;
 }
 
+/* 본문 스타일 */
 .prose p {
-  margin-top: 0;
   margin-bottom: 1rem;
 }
 
-.prose ul, .prose ol {
-  margin-top: 0;
+.prose ul,
+.prose ol {
   margin-bottom: 1rem;
   padding-left: 1.5rem;
 }
 
 .prose ul li {
-  @apply list-disc mb-1;
+  list-style-type: disc;
+  margin-bottom: 0.25rem;
 }
 
 .prose ol li {
-  @apply list-decimal mb-1;
+  list-style-type: decimal;
+  margin-bottom: 0.25rem;
 }
 
+/* 코드 스타일 */
+.prose code {
+  background-color: #f3f4f6;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-family: monospace;
+}
+
+.prose pre {
+  background-color: #1f2937;
+  color: #f3f4f6;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+/* 링크 스타일 */
+.prose a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.prose a:hover {
+  color: #1e40af;
+}
+
+/* ========================================
+   2. 인용구 스타일 (Prose)
+   ======================================== */
+
 .prose blockquote {
-  margin: 1.5rem 0;
+  margin: 16px 0;
   padding: 24px 16px;
   position: relative;
   color: #374151;
@@ -93,7 +102,6 @@ body {
   max-width: 100%;
   width: fit-content;
   text-align: center;
-  display: block;
 }
 
 .prose blockquote p {
@@ -101,7 +109,7 @@ body {
   text-align: center;
 }
 
-/* 인용구 정렬 - prose */
+/* 정렬 */
 .prose blockquote[data-align="left"] {
   margin-left: 0;
   margin-right: auto;
@@ -117,7 +125,7 @@ body {
   margin-right: 0;
 }
 
-/* 스타일 1: 텍스트 위 아래로 배치된 따옴표 - prose */
+/* 스타일 1: 위/아래 따옴표 */
 .prose blockquote.quote-style-1 {
   padding: 24px 16px;
 }
@@ -142,13 +150,13 @@ body {
   line-height: 1;
 }
 
-/* 스타일 2: 텍스트 왼쪽에 있는 세로 라인 - prose */
+/* 스타일 2: 왼쪽 세로 라인 */
 .prose blockquote.quote-style-2 {
   border-left: 4px solid #6b7280;
   padding: 8px 16px;
 }
 
-/* 스타일 3: 텍스트 감싸는 직각형태의 말풍선 - prose */
+/* 스타일 3: 말풍선 형태 */
 .prose blockquote.quote-style-3 {
   border: 2px solid #d1d5db;
   border-radius: 0;
@@ -183,7 +191,7 @@ body {
   z-index: 1;
 }
 
-/* 스타일 4: 텍스트 왼쪽 위에 따옴표 한개, 텍스트 아래에 가로 라인 - prose */
+/* 스타일 4: 위 따옴표 + 아래 라인 */
 .prose blockquote.quote-style-4 {
   padding: 16px 16px 12px 16px;
   border-bottom: 2px solid #e5e7eb;
@@ -199,7 +207,7 @@ body {
   line-height: 1;
 }
 
-/* 스타일 6: 텍스트 감싸는 왼쪽 위, 오른쪽 아래 프레임 형태 - prose */
+/* 스타일 6: 프레임 형태 */
 .prose blockquote.quote-style-6 {
   padding: 16px;
   position: relative;
@@ -227,25 +235,14 @@ body {
   border-right: 3px solid #6b7280;
 }
 
-.prose code {
-  @apply bg-gray-100 px-1 py-0.5 rounded text-sm font-mono;
-}
+/* ========================================
+   3. 이미지 스타일 (Prose)
+   ======================================== */
 
-.prose pre {
-  @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto;
-  margin: 1.5rem 0;
-}
-
-.prose pre code {
-  background: transparent;
-  padding: 0;
-}
-
-/* 이미지 wrapper 스타일 - prose */
 .prose .image-wrapper {
   display: block;
   max-width: 100%;
-  margin: 1.5rem 0;
+  margin: 0.5rem 0;
 }
 
 .prose .image-wrapper[data-align="left"] {
@@ -261,52 +258,23 @@ body {
 }
 
 .prose .image-wrapper img {
-  @apply rounded-lg shadow-sm;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   display: inline-block;
   max-width: 100%;
   height: auto;
-  margin: 0;
 }
 
 .prose img {
-  @apply rounded-lg shadow-sm;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   display: inline-block;
-  margin: 1.5rem 0;
+  margin: 0.5rem;
   max-width: 100%;
   height: auto;
 }
 
-/* 이미지 리사이저 컨테이너 스타일 - prose */
-.prose .image-resizer-container {
-  display: block;
-  max-width: 100%;
-  margin: 1.5rem 0;
-}
-
-.prose .image-resizer-container[data-align="left"],
-.prose .image-resizer-container.image-align-left {
-  text-align: left;
-}
-
-.prose .image-resizer-container[data-align="center"],
-.prose .image-resizer-container.image-align-center {
-  text-align: center;
-}
-
-.prose .image-resizer-container[data-align="right"],
-.prose .image-resizer-container.image-align-right {
-  text-align: right;
-}
-
-.prose .image-resizer-container img {
-  @apply rounded-lg shadow-sm;
-  display: inline-block !important;
-  height: auto !important;
-  margin: 0 !important;
-  max-width: 100% !important;
-}
-
-/* 이미지 float 정렬로 텍스트와 나란히 배치 */
+/* Float 정렬 */
 .prose img[style*="float: left"] {
   float: left;
   margin-right: 1rem;
@@ -319,29 +287,122 @@ body {
   margin-bottom: 0.5rem;
 }
 
-.prose a {
-  @apply text-blue-600 hover:text-blue-800 underline;
-}
+/* ========================================
+   4. 테이블 스타일 (Prose)
+   ======================================== */
 
 .prose table {
-  @apply w-full border-collapse border border-gray-300;
-  margin: 1.5rem 0;
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #d1d5db;
+  margin-bottom: 1rem;
 }
 
 .prose th,
 .prose td {
-  @apply border border-gray-300 px-4 py-2;
+  border: 1px solid #d1d5db;
+  padding: 0.75rem 1rem;
 }
 
 .prose th {
-  @apply bg-gray-50 font-semibold;
+  background-color: #f9fafb;
+  font-weight: 600;
 }
 
-/* TipTap 에디터 특정 스타일 */
+/* ========================================
+   5. 구분선 스타일 (Prose)
+   ======================================== */
+
+.prose hr {
+  border: none;
+  margin: 20px auto;
+  display: block;
+  position: relative;
+  cursor: pointer;
+}
+
+.prose hr:hover {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* 정렬 */
+.prose hr[data-align="left"] {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.prose hr[data-align="center"] {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.prose hr[data-align="right"] {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* 1. 짧은 기본선 */
+.prose hr.divider-short {
+  width: 20%;
+  height: 1px;
+  background-color: #d1d5db;
+}
+
+/* 2. 긴 기본선 */
+.prose hr.divider-long {
+  width: 50%;
+  height: 1px;
+  background-color: #d1d5db;
+}
+
+/* 3. 두꺼운선 */
+.prose hr.divider-thick {
+  width: 20%;
+  height: 3px;
+  background-color: #6b7280;
+}
+
+/* 4. 점선 */
+.prose hr.divider-dashed {
+  width: 50%;
+  height: 0;
+  border-top: 2px dashed #d1d5db;
+}
+
+/* 5. 세로선 */
+.prose hr.divider-vertical {
+  width: 1px;
+  height: 60px;
+  background-color: #d1d5db;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.prose hr.divider-vertical[data-align="left"] {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.prose hr.divider-vertical[data-align="center"] {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.prose hr.divider-vertical[data-align="right"] {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* ========================================
+   6. ProseMirror 에디터 스타일
+   ======================================== */
+
 .ProseMirror {
   outline: none !important;
 }
 
+/* 플레이스홀더 */
 .ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
@@ -350,19 +411,17 @@ body {
   height: 0;
 }
 
-/* 드래그 커서 스타일 */
+/* 드래그 커서 */
 .ProseMirror-dropcursor {
-  @apply border-l-2 border-blue-500;
+  border-left: 2px solid #3b82f6;
 }
 
-/* 선택된 이미지 스타일 */
-.ProseMirror img.ProseMirror-selectednode {
-  @apply ring-2 ring-blue-500 ring-offset-2;
-}
+/* ========================================
+   7. 이미지 스타일 (ProseMirror)
+   ======================================== */
 
-/* 이미지 기본 스타일 */
 .ProseMirror img {
-  @apply cursor-pointer;
+  cursor: pointer;
   max-width: 100%;
   height: auto;
   display: inline-block;
@@ -370,10 +429,16 @@ body {
 }
 
 .ProseMirror img:hover {
-  @apply ring-1 ring-gray-300;
+  outline: 1px solid #d1d5db;
 }
 
-/* 이미지 float 정렬로 텍스트와 나란히 배치 */
+/* 선택된 이미지 */
+.ProseMirror img.ProseMirror-selectednode {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Float 정렬 */
 .ProseMirror img[style*="float: left"],
 .ProseMirror img.image-float-left {
   float: left;
@@ -388,7 +453,7 @@ body {
   margin-bottom: 0.5rem;
 }
 
-/* 이미지 wrapper 스타일 */
+/* 이미지 컨테이너 */
 .ProseMirror .image-wrapper {
   display: block;
   max-width: 100%;
@@ -412,7 +477,7 @@ body {
   height: auto;
 }
 
-/* 이미지 정렬 스타일 (에디터용 컨테이너) */
+/* 이미지 리사이저 컨테이너 */
 .ProseMirror .image-resizer-container {
   display: block;
   max-width: 100%;
@@ -433,7 +498,7 @@ body {
   text-align: right;
 }
 
-/* 이미지 효과 스타일 */
+/* 이미지 효과 */
 .ProseMirror img.image-shadow {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
@@ -446,10 +511,13 @@ body {
   border-radius: 0.5rem;
 }
 
-/* 테이블 스타일 향상 */
+/* ========================================
+   8. 테이블 스타일 (ProseMirror)
+   ======================================== */
+
 .ProseMirror table {
-  border-collapse: separate; /* collapse 대신 separate 사용 */
-  border-spacing: 0; /* 셀 간격 제거 */
+  border-collapse: separate;
+  border-spacing: 0;
   table-layout: fixed;
   width: 100%;
   margin: 1rem 0;
@@ -459,7 +527,7 @@ body {
 .ProseMirror table td,
 .ProseMirror table th {
   min-width: 10em;
-  border: none; /* 기본 테두리 제거 - 동적으로 설정 */
+  border: none;
   padding: 8px;
   vertical-align: top;
   box-sizing: border-box;
@@ -498,27 +566,14 @@ body {
   margin: 0;
 }
 
-/* 테이블 선택 스타일 */
 .ProseMirror .selectedCell {
-  @apply bg-blue-100;
+  background-color: #dbeafe;
 }
 
-/* YouTube 임베드 스타일 */
-.ProseMirror iframe {
-  @apply rounded-lg shadow-sm;
-}
+/* ========================================
+   9. 인용구 스타일 (ProseMirror)
+   ======================================== */
 
-/* 링크 스타일 */
-.ProseMirror a {
-  @apply text-blue-600 hover:text-blue-800 underline cursor-pointer;
-}
-
-/* 하이라이트 스타일 */
-.ProseMirror mark {
-  @apply bg-yellow-200 px-1 rounded;
-}
-
-/* 인용구 기본 스타일 */
 .ProseMirror blockquote {
   margin: 16px 0;
   position: relative;
@@ -534,7 +589,7 @@ body {
   text-align: center;
 }
 
-/* 인용구 정렬 */
+/* 정렬 */
 .ProseMirror blockquote[data-align="left"] {
   margin-left: 0;
   margin-right: auto;
@@ -550,7 +605,7 @@ body {
   margin-right: 0;
 }
 
-/* 스타일 1: 텍스트 위 아래로 배치된 따옴표 */
+/* 스타일 1: 위/아래 따옴표 (기본) */
 .ProseMirror blockquote,
 .ProseMirror blockquote.quote-style-1 {
   padding: 24px 16px;
@@ -576,13 +631,13 @@ body {
   line-height: 1;
 }
 
-/* 스타일 2: 텍스트 왼쪽에 있는 세로 라인 */
+/* 스타일 2: 왼쪽 세로 라인 */
 .ProseMirror blockquote.quote-style-2 {
   border-left: 4px solid #6b7280;
   padding: 8px 16px;
 }
 
-/* 스타일 3: 텍스트 감싸는 직각형태의 말풍선 */
+/* 스타일 3: 말풍선 형태 */
 .ProseMirror blockquote.quote-style-3 {
   border: 2px solid #d1d5db;
   border-radius: 0;
@@ -617,7 +672,7 @@ body {
   z-index: 1;
 }
 
-/* 스타일 4: 텍스트 왼쪽 위에 따옴표 한개, 텍스트 아래에 가로 라인 */
+/* 스타일 4: 위 따옴표 + 아래 라인 */
 .ProseMirror blockquote.quote-style-4 {
   padding: 16px 16px 12px 16px;
   border-bottom: 2px solid #e5e7eb;
@@ -633,111 +688,7 @@ body {
   line-height: 1;
 }
 
-/* 구분선 스타일 */
-.ProseMirror hr,
-.prose hr {
-  border: none;
-  margin-top: 1.5rem;
-  margin-bottom: 1.5rem;
-  margin-left: auto;
-  margin-right: auto;
-  display: block;
-  position: relative;
-  cursor: pointer;
-  clear: both; /* float 해제 */
-  padding: 0.1px 0; /* 마진 상쇄 방지용 최소 padding */
-  box-sizing: content-box;
-}
-
-/* 구분선 hover 효과 */
-.ProseMirror hr:hover,
-.prose hr:hover {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-/* 구분선 정렬 */
-.ProseMirror hr[data-align="left"],
-.prose hr[data-align="left"] {
-  margin-left: 0;
-  margin-right: auto;
-}
-
-.ProseMirror hr[data-align="center"],
-.prose hr[data-align="center"] {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.ProseMirror hr[data-align="right"],
-.prose hr[data-align="right"] {
-  margin-left: auto;
-  margin-right: 0;
-}
-
-/* 1. 짧은 기본선 */
-.ProseMirror hr.divider-short,
-.prose hr.divider-short {
-  width: 20%;
-  height: 1px;
-  background-color: #d1d5db;
-}
-
-/* 2. 긴 기본선 */
-.ProseMirror hr.divider-long,
-.prose hr.divider-long {
-  width: 50%;
-  height: 1px;
-  background-color: #d1d5db;
-}
-
-/* 3. 짧은 두꺼운선 */
-.ProseMirror hr.divider-thick,
-.prose hr.divider-thick {
-  width: 20%;
-  height: 3px;
-  background-color: #6b7280;
-}
-
-/* 4. 끊겨있는 선 */
-.ProseMirror hr.divider-dashed,
-.prose hr.divider-dashed {
-  width: 50%;
-  height: 0;
-  border-top: 2px dashed #d1d5db;
-}
-
-/* 5. 세로 선 */
-.ProseMirror hr.divider-vertical,
-.prose hr.divider-vertical {
-  width: 1px;
-  height: 60px;
-  background-color: #d1d5db;
-  margin-top: 1.5rem;
-  margin-bottom: 1.5rem;
-  padding: 0; /* 세로선은 padding 제거 */
-}
-
-/* 세로선 정렬 */
-.ProseMirror hr.divider-vertical[data-align="left"],
-.prose hr.divider-vertical[data-align="left"] {
-  margin-left: 0;
-  margin-right: auto;
-}
-
-.ProseMirror hr.divider-vertical[data-align="center"],
-.prose hr.divider-vertical[data-align="center"] {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.ProseMirror hr.divider-vertical[data-align="right"],
-.prose hr.divider-vertical[data-align="right"] {
-  margin-left: auto;
-  margin-right: 0;
-}
-
-/* 스타일 6: 텍스트 감싸는 왼쪽 위, 오른쪽 아래 프레임 형태 */
+/* 스타일 6: 프레임 형태 */
 .ProseMirror blockquote.quote-style-6 {
   padding: 16px;
   position: relative;
@@ -765,7 +716,124 @@ body {
   border-right: 3px solid #6b7280;
 }
 
-/* 슬래시 커맨드 메뉴 스타일 */
+/* ========================================
+   10. 구분선 스타일 (ProseMirror)
+   ======================================== */
+
+.ProseMirror hr {
+  border: none;
+  margin: 20px auto;
+  display: block;
+  position: relative;
+  cursor: pointer;
+}
+
+.ProseMirror hr:hover {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* 정렬 */
+.ProseMirror hr[data-align="left"] {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.ProseMirror hr[data-align="center"] {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ProseMirror hr[data-align="right"] {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* 1. 짧은 기본선 */
+.ProseMirror hr.divider-short {
+  width: 20%;
+  height: 1px;
+  background-color: #d1d5db;
+}
+
+/* 2. 긴 기본선 */
+.ProseMirror hr.divider-long {
+  width: 50%;
+  height: 1px;
+  background-color: #d1d5db;
+}
+
+/* 3. 두꺼운선 */
+.ProseMirror hr.divider-thick {
+  width: 20%;
+  height: 3px;
+  background-color: #6b7280;
+}
+
+/* 4. 점선 */
+.ProseMirror hr.divider-dashed {
+  width: 50%;
+  height: 0;
+  border-top: 2px dashed #d1d5db;
+}
+
+/* 5. 세로선 */
+.ProseMirror hr.divider-vertical {
+  width: 1px;
+  height: 60px;
+  background-color: #d1d5db;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.ProseMirror hr.divider-vertical[data-align="left"] {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.ProseMirror hr.divider-vertical[data-align="center"] {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ProseMirror hr.divider-vertical[data-align="right"] {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* ========================================
+   11. 기타 요소 스타일 (ProseMirror)
+   ======================================== */
+
+/* YouTube 임베드 */
+.ProseMirror iframe {
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* 링크 */
+.ProseMirror a {
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ProseMirror a:hover {
+  color: #1e40af;
+}
+
+/* 하이라이트 */
+.ProseMirror mark {
+  background-color: #fef08a;
+  padding: 0 0.25rem;
+  border-radius: 0.125rem;
+}
+
+/* ========================================
+   12. UI 컴포넌트 스타일
+   ======================================== */
+
+/* 슬래시 커맨드 메뉴 */
 .slash-commands-menu {
   min-width: 280px;
   max-width: 320px;
@@ -779,7 +847,7 @@ body {
   transform: translateX(2px);
 }
 
-/* Tippy tooltip 커스텀 스타일 */
+/* Tippy 툴팁 */
 .tippy-box[data-theme~='light'] {
   background-color: white;
   color: #374151;
@@ -790,115 +858,4 @@ body {
 
 .tippy-box[data-theme~='light'] .tippy-content {
   padding: 0;
-}
-
-/* ========================================
-   AG Grid 전역 스타일
-   ======================================== */
-
-/* Grid 컨테이너 스타일 */
-.grid-container {
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-/* Compact density */
-.compact-grid.ag-theme-material {
-  --ag-grid-size: 4px;
-  --ag-list-item-height: 20px;
-  --ag-row-height: 34px;
-
-  /* 외곽 border 제거 */
-  --ag-borders: none;
-  --ag-border-color: transparent;
-  --ag-wrapper-border-radius: 0px;
-
-  /* 폰트 크기 조정 */
-  --ag-font-size: 14px;
-  font-size: 14px;
-}
-
-/* zebra stripe only */
-.compact-grid .ag-row-even {
-  background-color: #fafafa;
-}
-
-/* hover 강조 */
-.compact-grid .ag-row-hover {
-  background-color: #e6f2ff !important;
-}
-
-/* 헤더 폰트 설정 */
-.compact-grid .ag-header-cell {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-/* 헤더 텍스트 center 정렬 */
-.compact-grid .ag-header-cell-label {
-  justify-content: center !important;
-}
-
-/* cell 간 아주 약한 Divider + 폰트 설정 */
-.compact-grid .ag-cell {
-  border-right: 1px solid rgba(0, 0, 0, 0.04);
-  display: flex !important;
-  align-items: center !important;
-  font-size: 14px;
-  color: #374151;
-}
-
-/* 셀 센터 정렬 */
-.compact-grid .ag-cell.ag-cell-center {
-  justify-content: center !important;
-}
-
-/* ========================================
-   Sonner Toast 커스텀 스타일
-   ======================================== */
-
-/* 성공 Toast - 초록색 */
-.sonner-success {
-  background-color: #f0fdf4 !important;
-  border: 2px solid #22c55e !important;
-  color: #166534 !important;
-}
-
-.sonner-success [data-icon] {
-  color: #22c55e !important;
-}
-
-.sonner-success [data-content] {
-  font-weight: 500;
-}
-
-/* 알림 Toast - 파란색 */
-.sonner-info {
-  background-color: #eff6ff !important;
-  border: 2px solid #3b82f6 !important;
-  color: #1e40af !important;
-}
-
-.sonner-info [data-icon] {
-  color: #3b82f6 !important;
-}
-
-.sonner-info [data-content] {
-  font-weight: 500;
-}
-
-/* 오류 Toast - 빨간색 */
-.sonner-error {
-  background-color: #fef2f2 !important;
-  border: 2px solid #ef4444 !important;
-  color: #991b1b !important;
-}
-
-.sonner-error [data-icon] {
-  color: #ef4444 !important;
-}
-
-.sonner-error [data-content] {
-  font-weight: 500;
 }

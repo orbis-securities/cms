@@ -441,7 +441,7 @@ export default function PostDetailPage() {
   const canEdit = post.createdBy === 'aiSystem' || post.createdBy === currentUserId;
 
   return (
-    <div className="max-w-screen-2xl mx-auto px-5 py-6">
+    <div className="max-w-7xl mx-auto px-6 py-6">
       {/* Header */}
       {!isPreview && (
         <div className="flex items-center justify-end gap-2 mb-4">

@@ -63,12 +63,27 @@ export const ResizableImage = Image.extend({
           };
         },
       },
+      'data-featured-image': {
+        default: null,
+        parseHTML: (element: HTMLElement) => {
+          return element.getAttribute('data-featured-image') || element.parentElement?.getAttribute('data-featured-image') || null;
+        },
+        renderHTML: (attributes: any) => {
+          if (attributes['data-featured-image'] === 'true') {
+            return {
+              'data-featured-image': 'true',
+            };
+          }
+          return {};
+        },
+      },
     };
   },
 
   renderHTML({ HTMLAttributes, node }: { HTMLAttributes: Record<string, any>; node: any }) {
     const align = node.attrs.align || 'left';
     const width = node.attrs.width;
+    const isFeatured = node.attrs['data-featured-image'] === 'true';
 
     // 이미지 속성 준비
     const imgAttributes = {
@@ -78,6 +93,9 @@ export const ResizableImage = Image.extend({
         'width': width,
         'style': `width: ${width}px; max-width: 100%; height: auto;`,
       }),
+      ...(isFeatured && {
+        'data-featured-image': 'true',
+      }),
     };
 
     return [
@@ -85,6 +103,7 @@ export const ResizableImage = Image.extend({
       {
         'data-align': align,
         ...(width && { 'data-width': width }),
+        ...(isFeatured && { 'data-featured-image': 'true' }),
         class: 'image-wrapper'
       },
       [
@@ -98,8 +117,14 @@ export const ResizableImage = Image.extend({
     return ({ node, getPos, editor }: { node: any; getPos: any; editor: any }) => {
       const container = document.createElement('div');
       const align = node.attrs.align || 'left';
+      const isFeatured = node.attrs['data-featured-image'] === 'true';
+
       container.className = `image-resizer-container image-align-${align}`;
       container.setAttribute('data-align', align);
+
+      if (isFeatured) {
+        container.setAttribute('data-featured-image', 'true');
+      }
 
       // 이미지 wrapper (리사이즈 핸들을 위한 position: relative 컨테이너)
       const imgWrapper = document.createElement('div');
@@ -112,6 +137,10 @@ export const ResizableImage = Image.extend({
       const img = document.createElement('img');
       img.src = node.attrs.src;
       img.alt = node.attrs.alt || '';
+
+      if (isFeatured) {
+        img.setAttribute('data-featured-image', 'true');
+      }
 
       const imageWidth = node.attrs.width ? `${node.attrs.width}px` : 'auto';
       img.style.cssText = `
@@ -216,6 +245,16 @@ export const ResizableImage = Image.extend({
           const align = updatedNode.attrs.align || 'left';
           container.className = `image-resizer-container image-align-${align}`;
           container.setAttribute('data-align', align);
+
+          // featured 상태 업데이트
+          const isFeatured = updatedNode.attrs['data-featured-image'] === 'true';
+          if (isFeatured) {
+            container.setAttribute('data-featured-image', 'true');
+            img.setAttribute('data-featured-image', 'true');
+          } else {
+            container.removeAttribute('data-featured-image');
+            img.removeAttribute('data-featured-image');
+          }
 
           return true;
         },

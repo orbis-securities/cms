@@ -513,9 +513,8 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
       if (target.tagName === 'IMG' || target.closest('img')) {
         const img = target.tagName === 'IMG' ? target as HTMLImageElement : target.closest('img') as HTMLImageElement;
         if (img) {
-          // 타이틀 이미지 프리뷰 영역의 이미지는 툴바 표시하지 않음
+          // 타이틀 이미지 프리뷰 영역의 이미지는 툴바 표시하지 않음 (에디터 외부 프리뷰용)
           if (img.hasAttribute('data-featured-preview') ||
-              img.hasAttribute('data-featured-image') ||
               img.classList.contains('featured-image-preview')) {
             console.log('🖼️ 타이틀 이미지 프리뷰 클릭 - 툴바 표시 안함');
             return;
@@ -782,6 +781,54 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
     }
   };
 
+  // 타이틀 이미지 설정 핸들러
+  const handleSetFeaturedImage = (imageUrl: string) => {
+    if (!editor) return;
+
+    try {
+      const { state } = editor;
+      let tr = state.tr;
+      let hasChanges = false;
+
+      // 에디터의 모든 이미지 노드를 순회하면서 data-featured-image 속성 정리
+      state.doc.descendants((node, pos) => {
+        if (node.type.name === 'resizableImage') {
+          const currentAttrs = node.attrs;
+
+          // 현재 선택된 이미지면 data-featured-image를 true로 설정
+          if (currentAttrs.src === imageUrl) {
+            if (!currentAttrs['data-featured-image']) {
+              tr = tr.setNodeMarkup(pos, undefined, {
+                ...currentAttrs,
+                'data-featured-image': 'true'
+              });
+              hasChanges = true;
+            }
+          }
+          // 다른 이미지면 data-featured-image 속성 제거
+          else if (currentAttrs['data-featured-image']) {
+            const { 'data-featured-image': _, ...restAttrs } = currentAttrs;
+            tr = tr.setNodeMarkup(pos, undefined, restAttrs);
+            hasChanges = true;
+          }
+        }
+      });
+
+      // 변경사항이 있으면 적용
+      if (hasChanges) {
+        editor.view.dispatch(tr);
+      }
+
+      // 상위 컴포넌트의 onSetFeatured 호출
+      if (onSetFeatured) {
+        onSetFeatured(imageUrl);
+      }
+    } catch (error) {
+      console.error('❌ 타이틀 이미지 설정 실패:', error);
+      toast.error('타이틀 이미지 설정에 실패했습니다.');
+    }
+  };
+
   // 블로그 선택 시 폰트 자동 변경
   useEffect(() => {
     const updateEditorFont = async () => {
@@ -911,7 +958,8 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
               style={{
                 fontFamily: 'Monaco, Menlo, "Ubuntu Mono", consolas, "source-code-pro", monospace',
                 lineHeight: '1.5',
-                tabSize: 2
+                tabSize: 2,
+                whiteSpace: 'pre'
               }}
             />
           </div>
@@ -936,7 +984,7 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
         onDelete={handleImageDelete}
         onAlign={handleImageAlign}
         onResize={handleImageResize}
-        onSetFeatured={onSetFeatured}
+        onSetFeatured={handleSetFeaturedImage}
         currentWidth={selectedImageNode?.width || 400}
         currentAlignment={currentImageAlignment}
         currentImageUrl={selectedImageNode?.src || ''}
