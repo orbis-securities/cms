@@ -84,21 +84,8 @@ ${content}
     });
 
   } catch (error) {
-    console.error('AI 본문 보강 에러:', error);
-
-    // Gemini API 에러 처리
-    if (error instanceof Error) {
-      return NextResponse.json(
-        {
-          error: 'AI 본문 보강 서비스 오류가 발생했습니다.',
-          details: error.message
-        },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json(
-      { error: '서버 오류가 발생했습니다.' },
+      { error: 'AI 본문 보강 서비스 오류가 발생했습니다.' },
       { status: 500 }
     );
   }
