@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import AdvancedNovelEditor, { AdvancedNovelEditorRef } from '@/components/editor/AdvancedNovelEditor';
+import AdvancedNovelEditor, { AdvancedNovelEditorRef } from '@/components/editor/core/AdvancedNovelEditor';
 import {
   Eye,
   Save,
@@ -13,7 +13,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';;
-import SpellCheckPanel from '@/components/editor/SpellCheckPanel';
+import SpellCheckPanel from '@/components/editor/modals/SpellCheckPanel';
 import CommonCodeSelect from '@/components/common/CommonCodeSelect';
 import CategorySelect from '@/components/common/CategorySelect';
 import Button from '@/components/common/Button';
@@ -609,13 +609,6 @@ function WritePageContent() {
           </Button>
           <Button
             onClick={() => {
-              if (!isPreview) {
-                // 미리보기로 전환하기 전에 에디터 내용 저장
-                const editorContent = editorRef.current?.getHTML?.();
-                if (editorContent) {
-                  setPostContent(editorContent);
-                }
-              }
               setIsPreview(!isPreview);
             }}
             variant="secondary"

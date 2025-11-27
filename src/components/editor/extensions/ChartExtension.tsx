@@ -1,7 +1,7 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
 import React from 'react';
-import ChartView from '../ChartView';
+import ChartView from '../views/ChartView';
 
 // React Component for the Node View
 const ChartComponent = ({ node }: { node: any }) => {

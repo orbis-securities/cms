@@ -7,9 +7,9 @@ import { ArrowLeft, Calendar, Tag, Eye, Edit, Trash2, Loader2 } from 'lucide-rea
 import { Post } from '@/types';
 import { toast } from 'sonner';
 import { createRoot } from 'react-dom/client';
-import { MarketWidgetView } from '@/components/editor/MarketWidgetView';
-import { PollView } from '@/components/editor/PollView';
-import ChartView from '@/components/editor/ChartView';
+import { MarketWidgetView } from '@/components/editor/views/MarketWidgetView';
+import { PollView } from '@/components/editor/views/PollView';
+import ChartView from '@/components/editor/views/ChartView';
 import React from 'react';
 import Button from '@/components/common/Button';
 

@@ -60,11 +60,6 @@ const CustomEmojiPicker: React.FC<EmojiPickerProps> = ({
 
   return (
     <div className="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg p-4 z-20 w-80">
-      <h4 className="font-semibold mb-3 flex items-center gap-2">
-        <Smile className="w-4 h-4 text-yellow-600" />
-        이모지 선택
-      </h4>
-
       {/* 인기 이모지들 */}
       <div className="mb-4">
         <div className="text-xs text-gray-400 mb-2">🔥 인기 이모지</div>

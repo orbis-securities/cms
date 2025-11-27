@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { X, Save } from 'lucide-react';
 import { toast } from 'sonner';
-import AdvancedNovelEditor, { AdvancedNovelEditorRef } from '@/components/editor/AdvancedNovelEditor';
+import AdvancedNovelEditor, { AdvancedNovelEditorRef } from '@/components/editor/core/AdvancedNovelEditor';
 import Button from '@/components/common/Button';
 import { Template } from '@/types';
 

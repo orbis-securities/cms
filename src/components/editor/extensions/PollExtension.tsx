@@ -1,7 +1,7 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
 import React from 'react';
-import { PollView } from '../PollView';
+import { PollView } from '../views/PollView';
 
 // React Component for the Node View
 const PollComponent = ({ node }: { node: any }) => {

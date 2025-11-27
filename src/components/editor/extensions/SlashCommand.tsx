@@ -2,12 +2,12 @@ import { Extension } from '@tiptap/core';
 import Suggestion from '@tiptap/suggestion';
 import { ReactRenderer } from '@tiptap/react';
 import tippy, { Instance as TippyInstance } from 'tippy.js';
-import { CommandsList, CommandItem } from '../CommandsList';
+import { CommandsList, CommandItem } from '../ui/CommandsList';
 import { createRoot } from 'react-dom/client';
 import React from 'react';
-import SymbolSelectModal from '../SymbolSelectModal';
-import PollConfigModal from '../PollConfigModal';
-import ChartDialog from '../ChartDialog';
+import SymbolSelectModal from '../modals/SymbolSelectModal';
+import PollConfigModal from '../modals/PollConfigModal';
+import ChartDialog from '../modals/ChartDialog';
 
 export const SlashCommand = Extension.create({
   name: 'slashCommand',
@@ -85,8 +85,12 @@ export const getSuggestionItems = ({ query, editor, onImageUpload, onAIButtonCli
               const file = files[i];
               try {
                 const url = await onImageUpload(file);
-                // 각 이미지를 HTML로 삽입하여 덮어쓰기 방지
-                editor.chain().focus().insertContent(`<img src="${url}" style="display: inline-block; max-width: 100%; height: auto;" /><p></p>`).run();
+                // XSS 방지: TipTap 노드 API 사용
+                editor.chain()
+                  .focus()
+                  .setImage({ src: url })
+                  .createParagraphNear()
+                  .run();
               } catch (error) {
                 console.error(`이미지 업로드 실패: ${file.name}`, error);
               }

@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-material.css';
-import { AdvancedNovelEditorRef } from '@/components/editor/AdvancedNovelEditor';
+import { AdvancedNovelEditorRef } from '@/components/editor/core/AdvancedNovelEditor';
 import ProfileInfo from './components/ProfileInfo';
 import TemplateList from './components/TemplateList';
 import TemplateEditorModal from './components/TemplateEditorModal';

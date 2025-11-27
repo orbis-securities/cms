@@ -1,7 +1,7 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
 import React from 'react';
-import MarketWidgetView from '../MarketWidgetView';
+import MarketWidgetView from '../views/MarketWidgetView';
 
 // React Component for the Node View
 const MarketWidgetComponent = ({ node }: { node: any }) => {
