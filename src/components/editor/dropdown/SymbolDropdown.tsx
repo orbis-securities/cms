@@ -96,16 +96,6 @@ export default function SymbolDropdown({ editor, isOpen, onClose }: SymbolDropdo
           ))}
         </div>
       </div>
-
-      {/* 빠른 닫기 버튼 */}
-      <div className="text-center mt-3 pt-3 border-t">
-        <button
-          onClick={onClose}
-          className="px-3 py-1 text-xs border rounded hover:bg-gray-50"
-        >
-          닫기
-        </button>
-      </div>
     </div>
   );
 }

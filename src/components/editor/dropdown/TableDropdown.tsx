@@ -59,20 +59,12 @@ export default function TableDropdown({
         </span>
       </div>
 
-      <div className="flex gap-2">
-        <button
-          onClick={onCreateTable}
-          className="flex-1 bg-green-600 text-white px-3 py-1 text-sm rounded hover:bg-green-700"
-        >
-          표 생성
-        </button>
-        <button
-          onClick={onClose}
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-50"
-        >
-          닫기
-        </button>
-      </div>
+      <button
+        onClick={onCreateTable}
+        className="w-full bg-green-600 text-white px-3 py-1 text-sm rounded hover:bg-green-700"
+      >
+        표 생성
+      </button>
     </div>
   );
 }

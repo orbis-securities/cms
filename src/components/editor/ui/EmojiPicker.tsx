@@ -59,10 +59,10 @@ const CustomEmojiPicker: React.FC<EmojiPickerProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg p-4 z-20 w-80">
+    <div className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-md border border-gray-100 p-3 z-20 w-80">
       {/* 인기 이모지들 */}
       <div className="mb-4">
-        <div className="text-xs text-gray-400 mb-2">🔥 인기 이모지</div>
+        <div className="text-xs text-gray-500 mb-2">🔥 인기 이모지</div>
         <div className="grid grid-cols-8 gap-2 mb-3">
           {[
             '😂', '😭', '🥺', '😍', '🤔', '💀', '🔥', '✨',
@@ -88,7 +88,7 @@ const CustomEmojiPicker: React.FC<EmojiPickerProps> = ({
 
       {/* 전체 이모지 픽커 */}
       <div className="border-t pt-3">
-        <div className="text-xs text-gray-400 mb-2">전체 이모지</div>
+        <div className="text-xs text-gray-500 mb-2">전체 이모지</div>
         <div className="h-64 overflow-hidden">
           <EmojiPicker
             onEmojiClick={handleEmojiClick}
@@ -103,16 +103,6 @@ const CustomEmojiPicker: React.FC<EmojiPickerProps> = ({
             searchPlaceholder="이모지 검색..."
           />
         </div>
-      </div>
-
-      {/* 빠른 닫기 버튼 */}
-      <div className="text-center mt-3 pt-3 border-t">
-        <button
-          onClick={onClose}
-          className="px-3 py-1 text-xs border rounded hover:bg-gray-50"
-        >
-          닫기
-        </button>
       </div>
     </div>
   );
