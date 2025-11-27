@@ -57,12 +57,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const validationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const retryCountRef = useRef<number>(0);
 
   const logout = () => {
     // 자동 갱신 타이머 중지
     if (refreshTimerRef.current) {
       clearTimeout(refreshTimerRef.current);
       refreshTimerRef.current = null;
+    }
+
+    // 주기적 검증 타이머 중지
+    if (validationIntervalRef.current) {
+      clearInterval(validationIntervalRef.current);
+      validationIntervalRef.current = null;
     }
 
     // localStorage 정리
@@ -81,7 +89,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   // 토큰 갱신 함수
-  const refreshToken = async (): Promise<boolean> => {
+  const refreshToken = async (isRetry: boolean = false): Promise<boolean> => {
     try {
       const currentRefreshToken = localStorage.getItem('refreshToken');
       const currentAccessToken = localStorage.getItem('authToken');
@@ -90,11 +98,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const tokenToUse = currentRefreshToken || currentAccessToken;
 
       if (!tokenToUse) {
-        console.log('🚫 갱신할 토큰이 없습니다.');
         return false;
       }
-
-      console.log('🔄 토큰 갱신 시도...');
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/refreshToken`, {
         method: 'POST',
@@ -119,19 +124,57 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // 쿠키 업데이트
         document.cookie = `authToken=${newAccessToken}; path=/; max-age=${60 * 60 * 24 * 7}`;
 
-        console.log('✅ 토큰 갱신 성공');
+        // 재시도 카운터 리셋
+        retryCountRef.current = 0;
 
         // 다음 갱신 스케줄
         scheduleTokenRefresh(newAccessToken);
 
         return true;
       } else {
-        console.error('❌ 토큰 갱신 실패:', data.message);
+        // 실패 시 재시도 로직
+        if (!isRetry && retryCountRef.current < 3) {
+          retryCountRef.current += 1;
+          // 1초 후 재시도
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return await refreshToken(true);
+        }
         return false;
       }
     } catch (error) {
-      console.error('❌ 토큰 갱신 에러:', error);
+      // 네트워크 에러 등의 경우 재시도
+      if (!isRetry && retryCountRef.current < 3) {
+        retryCountRef.current += 1;
+        // 1초 후 재시도
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return await refreshToken(true);
+      }
       return false;
+    }
+  };
+
+  // 토큰 유효성 검증 및 갱신 필요 여부 확인
+  const validateAndRefreshIfNeeded = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      return;
+    }
+
+    const payload = parseJwt(token);
+    if (!payload || !payload.exp) {
+      return;
+    }
+
+    const now = Date.now();
+    const expTime = payload.exp * 1000;
+    const timeUntilExpiry = expTime - now;
+
+    // 만료 10분 전이면 갱신
+    if (timeUntilExpiry < 10 * 60 * 1000) {
+      const success = await refreshToken();
+      if (!success) {
+        logout();
+      }
     }
   };
 
@@ -153,24 +196,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const refreshTime = timeUntilExpiry - (5 * 60 * 1000); // 만료 5분 전
 
     if (refreshTime > 0) {
-      console.log(`⏰ 토큰 갱신 예정: ${Math.floor(refreshTime / 1000 / 60)}분 후`);
       refreshTimerRef.current = setTimeout(async () => {
         const success = await refreshToken();
         if (!success) {
-          // 갱신 실패 시 로그아웃
-          console.log('토큰 갱신 실패로 로그아웃합니다.');
           logout();
         }
       }, refreshTime);
     } else {
-      // 이미 만료되었거나 곧 만료될 예정
-      console.log('⚠️ 토큰이 곧 만료됩니다. 즉시 갱신 시도...');
       refreshToken().then((success) => {
         if (!success) {
           logout();
         }
       });
     }
+  };
+
+  // 주기적인 토큰 검증 시작
+  const startPeriodicValidation = () => {
+    // 기존 인터벌 클리어
+    if (validationIntervalRef.current) {
+      clearInterval(validationIntervalRef.current);
+    }
+
+    // 2분마다 토큰 유효성 검증
+    validationIntervalRef.current = setInterval(() => {
+      validateAndRefreshIfNeeded();
+    }, 2 * 60 * 1000);
   };
 
   useEffect(() => {
@@ -182,17 +233,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (token && userStr) {
         try {
           const userData = JSON.parse(userStr);
-          console.log('🔐 인증된 사용자:', userData.email);
           setUser(userData);
 
           // 토큰 갱신 스케줄링
           scheduleTokenRefresh(token);
+
+          // 주기적 검증 시작
+          startPeriodicValidation();
         } catch (error) {
-          console.error('사용자 정보 파싱 실패:', error);
           setUser(null);
         }
       } else {
-        console.log('🚫 인증 정보 없음');
         setUser(null);
       }
 
@@ -201,6 +252,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     checkAuth();
 
+    // Page Visibility API: 페이지가 다시 보일 때 토큰 검증
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // 페이지가 다시 보이면 즉시 토큰 검증
+        validateAndRefreshIfNeeded();
+      }
+    };
+
     // storage 이벤트 리스너 (다른 탭에서 로그인/로그아웃 시)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'authToken' || e.key === 'user') {
@@ -208,13 +267,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     };
 
+    // 이벤트 리스너 등록
     window.addEventListener('storage', handleStorageChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+
       // 컴포넌트 언마운트 시 타이머 정리
       if (refreshTimerRef.current) {
         clearTimeout(refreshTimerRef.current);
+      }
+      if (validationIntervalRef.current) {
+        clearInterval(validationIntervalRef.current);
       }
     };
   }, []);
