@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   PenTool,
@@ -16,7 +15,6 @@ import {
 
 export default function Header() {
   const { user, logout } = useAuth();
-  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -24,8 +22,6 @@ export default function Header() {
     { href: '/write', label: '글쓰기', icon: PenTool },
     { href: '/admin', label: '관리자', icon: Settings },
   ];
-
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
@@ -47,18 +43,11 @@ export default function Header() {
           <nav className="hidden md:flex items-center space-x-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const active = isActive(item.href);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`
-                    flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
-                    ${active
-                      ? 'bg-blue-50 text-blue-600'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }
-                  `}
+                  className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                 >
                   <Icon className="w-4 h-4" />
                   <span>{item.label}</span>
@@ -101,19 +90,12 @@ export default function Header() {
           <nav className="px-4 py-4 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const active = isActive(item.href);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`
-                    flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors
-                    ${active
-                      ? 'bg-blue-50 text-blue-600'
-                      : 'text-gray-600 hover:bg-gray-50'
-                    }
-                  `}
+                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
                 >
                   <Icon className="w-5 h-5" />
                   <span>{item.label}</span>

@@ -371,14 +371,6 @@ function WritePageContent() {
         // 수정 모드
         await updatePost('draft');
         toast.success('포스트가 수정되었습니다! 📝');
-
-        // sessionStorage에 postDetailData 저장
-        sessionStorage.setItem('postDetailData', JSON.stringify({
-          postId: editPostId,
-        }));
-
-        // 상세 페이지로 이동
-        router.push(`/post/${postSlug}`);
       } else {
         // 새 글 모드
         const result = await createPost('draft');
@@ -389,15 +381,13 @@ function WritePageContent() {
           throw new Error('포스트 정보를 받지 못했습니다.');
         }
 
-        // sessionStorage에 postDetailData 저장
-        sessionStorage.setItem('postDetailData', JSON.stringify({
-          postId: postId,
-        }));
-
         toast.success('초안이 저장되었습니다! 📝');
 
-        // 상세 페이지로 이동 (slug만 URL에 포함)
-        router.push(`/post/${slug}`);
+        // slug 상태 업데이트
+        setPostSlug(slug);
+
+        // 수정 모드로 전환 (URL만 변경)
+        router.replace(`/write?id=${postId}&blog=${selectedBlog}&category=${category}`);
       }
     } catch (error) {
       console.error('❌ 저장 실패:', error);

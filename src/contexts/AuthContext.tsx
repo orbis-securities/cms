@@ -88,6 +88,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     window.location.href = '/login';
   };
 
+  // 토큰이 아직 유효한지 확인하는 헬퍼 함수
+  const isTokenStillValid = (): boolean => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return false;
+
+    const payload = parseJwt(token);
+    if (!payload || !payload.exp) return false;
+
+    const now = Date.now();
+    const expTime = payload.exp * 1000;
+
+    // 만료 시간이 아직 남아있으면 true
+    return expTime > now;
+  };
+
   // 토큰 갱신 함수
   const refreshToken = async (isRetry: boolean = false): Promise<boolean> => {
     try {
@@ -101,12 +116,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return false;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/refreshToken`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/refreshtoken`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tokenToUse}`,
         },
+        body: JSON.stringify({
+          refreshToken: tokenToUse
+        }),
       });
 
       const data = await response.json();
@@ -173,7 +190,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (timeUntilExpiry < 10 * 60 * 1000) {
       const success = await refreshToken();
       if (!success) {
-        logout();
+        // 토큰 갱신 실패했지만 아직 유효하면 로그아웃 안함
+        if (!isTokenStillValid()) {
+          logout();
+        }
       }
     }
   };
@@ -199,13 +219,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       refreshTimerRef.current = setTimeout(async () => {
         const success = await refreshToken();
         if (!success) {
-          logout();
+          // 토큰 갱신 실패했지만 아직 유효하면 로그아웃 안함
+          if (!isTokenStillValid()) {
+            logout();
+          }
         }
       }, refreshTime);
     } else {
       refreshToken().then((success) => {
         if (!success) {
-          logout();
+          // 토큰 갱신 실패했지만 아직 유효하면 로그아웃 안함
+          if (!isTokenStillValid()) {
+            logout();
+          }
         }
       });
     }
@@ -237,9 +263,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
           // 토큰 갱신 스케줄링
           scheduleTokenRefresh(token);
-
-          // 주기적 검증 시작
-          startPeriodicValidation();
         } catch (error) {
           setUser(null);
         }
