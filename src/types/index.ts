@@ -118,6 +118,7 @@ export interface Category {
   blogNm?: string;
   categoryId: string;
   name: string;
+  path: string;
   sortOrder: number;
   useYn: string;
   useYnNm?: string;
