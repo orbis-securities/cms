@@ -27,6 +27,7 @@ export default function CategoryModal({
     categoryId: '',
     blogId: '',
     name: '',
+    path: '',
     sortOrder: 0,
     useYn: 'Y'
   });
@@ -43,6 +44,7 @@ export default function CategoryModal({
         categoryId: '',
         blogId: '',
         name: '',
+        path: '',
         sortOrder: 0,
         useYn: 'Y'
       });
@@ -52,8 +54,8 @@ export default function CategoryModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.blogId || !formData.name) {
-      alert('블로그, 카테고리명은 필수 입력 항목입니다.');
+    if (!formData.blogId || !formData.name || !formData.path) {
+      alert('블로그, 카테고리명, 경로는 필수 입력 항목입니다.');
       return;
     }
 
@@ -71,6 +73,7 @@ export default function CategoryModal({
           blogId: formData.blogId,
           categoryId: formData.categoryId,
           name: formData.name,
+          path: formData.path,
           sortOrder: formData.sortOrder,
           useYn: formData.useYn
         })
@@ -86,7 +89,6 @@ export default function CategoryModal({
         toast.error(result.message || '카테고리 저장에 실패했습니다.');
       }
     } catch (error) {
-      console.error('카테고리 저장 실패:', error);
       toast.error('카테고리 저장에 실패했습니다.');
     }
   };
@@ -96,6 +98,7 @@ export default function CategoryModal({
       categoryId: '',
       blogId: '',
       name: '',
+      path: '',
       sortOrder: 0,
       useYn: 'Y'
     });
@@ -131,7 +134,6 @@ export default function CategoryModal({
         toast.error(result.message || '카테고리 삭제에 실패했습니다.');
       }
     } catch (error) {
-      console.error('카테고리 삭제 실패:', error);
       toast.error('카테고리 삭제에 실패했습니다.');
     }
   };
@@ -208,6 +210,24 @@ export default function CategoryModal({
               value={formData.name || ''}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="카테고리명을 입력하세요"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+              required
+            />
+          </div>
+
+          {/* 경로 입력 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              경로 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.path || ''}
+              onChange={(e) => {
+                const value = e.target.value.replace(/^\/+/, ''); // 앞의 슬래시 제거
+                setFormData({ ...formData, path: value });
+              }}
+              placeholder="경로를 입력하세요 (예: category-name)"
               className="w-full px-3 py-2 border border-gray-200 rounded-lg"
               required
             />

@@ -77,13 +77,13 @@ export default function CategoryManagement() {
           blogId: cat.blogId,
           blogNm: cat.blogNm,
           name: cat.name,
+          path: cat.path || '',
           sortOrder: cat.sortOrder,
           useYn: cat.useYn,
           useYnNm: cat.useYnNm
         })));
       }
     } catch (error) {
-      console.error('카테고리 로드 실패:', error);
       toast.error('카테고리를 불러오는데 실패했습니다.');
     } finally {
     }
@@ -110,7 +110,6 @@ export default function CategoryManagement() {
         setTranslations(translationList);
       }
     } catch (error) {
-      console.error('카테고리 다국어 로드 실패:', error);
       toast.error('카테고리 다국어를 불러오는데 실패했습니다.');
     } finally {
     }

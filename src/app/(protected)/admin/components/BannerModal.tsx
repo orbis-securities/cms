@@ -168,7 +168,6 @@ export default function BannerModal({
         toast.error(result.message || `배너 ${isEditMode ? '수정' : '추가'}에 실패했습니다.`);
       }
     } catch (error) {
-      console.error('배너 저장 실패:', error);
       toast.error('배너 저장에 실패했습니다.');
     }
   };

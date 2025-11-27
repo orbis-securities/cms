@@ -66,7 +66,6 @@ export default function PageBannerSetting() {
         setBanners(data.result.banners);
       }
     } catch (error) {
-      console.error('배너 목록 로드 실패:', error);
       toast.error('배너 목록을 불러오는데 실패했습니다.');
     }
   }, [selectedBlog, selectedPage, selectedLang, selectedUseYn]);
@@ -130,7 +129,6 @@ export default function PageBannerSetting() {
         toast.error(result.message || '배너 삭제에 실패했습니다.');
       }
     } catch (error) {
-      console.error('배너 삭제 실패:', error);
       toast.error('배너 삭제에 실패했습니다.');
     }
   }, [loadBanners]);
