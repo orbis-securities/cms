@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 인증 토큰 확인 (쿠키에서)
@@ -32,7 +32,7 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// middleware가 실행될 경로 설정
+// proxy가 실행될 경로 설정
 export const config = {
   matcher: [
     /*

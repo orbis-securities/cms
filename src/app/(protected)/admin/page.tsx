@@ -6,11 +6,13 @@ import {
   ArrowLeft,
   Settings,
   List,
-  Image
+  Image,
+  Upload
 } from 'lucide-react';
 import { Toaster } from 'sonner';
 import CategoryManagement from './page/CategoryManagement';
 import PageBannerSetting from './page/PageBannerSetting';
+import DataUpload from './page/DataUpload';
 
 export default function AdminPage() {
   const [selectedMenu, setSelectedMenu] = useState<string>('category');
@@ -18,6 +20,7 @@ export default function AdminPage() {
   const menuItems = [
     { id: 'category', name: '카테고리', icon: List },
     { id: 'banner', name: '배너 설정', icon: Image },
+    { id: 'data-upload', name: '데이터 등록', icon: Upload },
   ];
 
   return (
@@ -53,6 +56,7 @@ export default function AdminPage() {
         <main className="flex-1">
           {selectedMenu === 'category' && <CategoryManagement />}
           {selectedMenu === 'banner' && <PageBannerSetting />}
+          {selectedMenu === 'data-upload' && <DataUpload />}
         </main>
       </div>
     </div>
