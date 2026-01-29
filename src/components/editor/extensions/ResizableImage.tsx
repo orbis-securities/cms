@@ -36,22 +36,29 @@ export const ResizableImage = Image.extend({
         },
       },
       width: {
-        default: 400,  // 기본값을 400으로 설정하여 null 방지
+        default: 400,
         parseHTML: (element: HTMLElement) => {
-          // data-width, width 속성, 또는 style에서 width 추출
+          // data-width, width 속성, 또는 style에서 width 추출 (NaN 체크 포함)
           const dataWidth = element.getAttribute('data-width');
           const widthAttr = element.getAttribute('width');
-          const styleWidth = element.style.width;
+          const styleWidth = element.style?.width;
 
-          if (dataWidth) return parseInt(dataWidth);
-          if (widthAttr) return parseInt(widthAttr);
-          if (styleWidth && styleWidth.includes('px')) {
-            return parseInt(styleWidth);
+          if (dataWidth) {
+            const parsed = parseInt(dataWidth, 10);
+            if (!isNaN(parsed) && parsed > 0) return parsed;
           }
-          return 400;  // 파싱 실패 시 기본값 반환
+          if (widthAttr) {
+            const parsed = parseInt(widthAttr, 10);
+            if (!isNaN(parsed) && parsed > 0) return parsed;
+          }
+          if (styleWidth && styleWidth.includes('px')) {
+            const parsed = parseInt(styleWidth, 10);
+            if (!isNaN(parsed) && parsed > 0) return parsed;
+          }
+          return 400;
         },
         renderHTML: (attributes: any) => {
-          const width = attributes.width || 400;
+          const width = attributes.width && attributes.width > 0 ? attributes.width : 400;
           return {
             'data-width': width,
             'width': width,
@@ -89,18 +96,16 @@ export const ResizableImage = Image.extend({
 
   renderHTML({ HTMLAttributes, node }: { HTMLAttributes: Record<string, any>; node: any }) {
     const align = node.attrs.align || 'left';
-    const width = node.attrs.width;
+    const width = node.attrs.width && node.attrs.width > 0 ? node.attrs.width : 400;
     const isFeatured = node.attrs['data-featured-image'] === 'true';
 
-    // 이미지 속성 준비 - data-align을 img 태그에 명시적으로 추가
+    // 이미지 속성 준비 - 모든 속성을 img 태그에 명시적으로 추가
     const imgAttributes = {
       ...HTMLAttributes,
-      'data-align': align,  // parseHTML에서 직접 읽을 수 있도록 img에 추가
-      ...(width && {
-        'data-width': width,
-        'width': width,
-        'style': `width: ${width}px; max-width: 100%; height: auto;`,
-      }),
+      'data-align': align,
+      'data-width': width,
+      'width': width,
+      'style': `width: ${width}px; max-width: 100%; height: auto;`,
       ...(isFeatured && {
         'data-featured-image': 'true',
       }),
@@ -110,7 +115,7 @@ export const ResizableImage = Image.extend({
       'div',
       {
         'data-align': align,
-        ...(width && { 'data-width': width }),
+        'data-width': width,
         ...(isFeatured && { 'data-featured-image': 'true' }),
         class: 'image-wrapper'
       },

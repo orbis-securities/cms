@@ -504,31 +504,8 @@ const AdvancedNovelEditor = forwardRef<AdvancedNovelEditorRef, AdvancedNovelEdit
     getHTML: () => {
       if (!editor) return '';
 
-      // DOM에서 직접 hardBreak 개수를 세서 처리
-      const domContent = editor.view.dom.cloneNode(true) as HTMLElement;
-
-      // ProseMirror 내부용 trailingBreak 제거 (줄 중복 방지)
-      const trailingBreaks = domContent.querySelectorAll('.ProseMirror-trailingBreak');
-      trailingBreaks.forEach(br => br.remove());
-
-      const paragraphs = domContent.querySelectorAll('p');
-
-      paragraphs.forEach(p => {
-        // 실제 hardBreak만 카운트 (trailingBreak 제외됨)
-        const breaks = p.querySelectorAll('br');
-        const textContent = p.textContent?.trim() || '';
-
-        // 텍스트가 없고 br만 있는 경우 - 의도적인 줄바꿈 유지
-        if (!textContent && breaks.length > 0) {
-          p.innerHTML = Array.from(breaks).map(() => '<br>').join('');
-        }
-      });
-
-      let content = domContent.innerHTML || '';
-
-      // 완전히 빈 p 태그는 빈 상태로 유지 (br 추가 안함)
-      // TipTap이 로드시 자동으로 처리함
-      // content = content.replace(/<p([^>]*)><\/p>/g, '<p$1><br></p>');  // 제거
+      // TipTap의 네이티브 getHTML 사용 (renderHTML 기반으로 정확한 속성 출력)
+      let content = editor.getHTML();
 
       // 이미 최상위 div로 감싸져 있지 않은 경우에만 추가
       if (!content.trim().startsWith('<div style="max-width: 100%;">')) {
