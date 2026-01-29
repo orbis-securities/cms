@@ -36,19 +36,26 @@ export const ResizableImage = Image.extend({
         },
       },
       width: {
-        default: null,
+        default: 400,  // 기본값을 400으로 설정하여 null 방지
         parseHTML: (element: HTMLElement) => {
-          const width = element.getAttribute('data-width') || element.getAttribute('width');
-          return width ? parseInt(width) : null;
+          // data-width, width 속성, 또는 style에서 width 추출
+          const dataWidth = element.getAttribute('data-width');
+          const widthAttr = element.getAttribute('width');
+          const styleWidth = element.style.width;
+
+          if (dataWidth) return parseInt(dataWidth);
+          if (widthAttr) return parseInt(widthAttr);
+          if (styleWidth && styleWidth.includes('px')) {
+            return parseInt(styleWidth);
+          }
+          return 400;  // 파싱 실패 시 기본값 반환
         },
         renderHTML: (attributes: any) => {
-          if (!attributes.width) {
-            return {};
-          }
+          const width = attributes.width || 400;
           return {
-            'data-width': attributes.width,
-            'width': attributes.width,
-            'style': `width: ${attributes.width}px; max-width: 100%; height: auto;`,
+            'data-width': width,
+            'width': width,
+            'style': `width: ${width}px; max-width: 100%; height: auto;`,
           };
         },
       },
@@ -85,9 +92,10 @@ export const ResizableImage = Image.extend({
     const width = node.attrs.width;
     const isFeatured = node.attrs['data-featured-image'] === 'true';
 
-    // 이미지 속성 준비
+    // 이미지 속성 준비 - data-align을 img 태그에 명시적으로 추가
     const imgAttributes = {
       ...HTMLAttributes,
+      'data-align': align,  // parseHTML에서 직접 읽을 수 있도록 img에 추가
       ...(width && {
         'data-width': width,
         'width': width,
@@ -142,9 +150,9 @@ export const ResizableImage = Image.extend({
         img.setAttribute('data-featured-image', 'true');
       }
 
-      const imageWidth = node.attrs.width ? `${node.attrs.width}px` : 'auto';
+      const imageWidth = node.attrs.width || 400;  // 기본값 400px
       img.style.cssText = `
-        width: ${imageWidth};
+        width: ${imageWidth}px;
         height: auto;
         max-width: 100%;
         cursor: default;
@@ -238,8 +246,8 @@ export const ResizableImage = Image.extend({
           img.src = updatedNode.attrs.src;
           img.alt = updatedNode.attrs.alt || '';
 
-          const updatedWidth = updatedNode.attrs.width ? `${updatedNode.attrs.width}px` : 'auto';
-          img.style.width = updatedWidth;
+          const updatedWidth = updatedNode.attrs.width || 400;  // 기본값 400px
+          img.style.width = `${updatedWidth}px`;
 
           // 정렬 업데이트
           const align = updatedNode.attrs.align || 'left';
