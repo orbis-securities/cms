@@ -19,7 +19,7 @@ export default function Header() {
 
   const navItems = [
     { href: '/post', label: '관리', icon: FolderOpen },
-    { href: '/write', label: '글쓰기', icon: PenTool },
+    { href: '/write-sun', label: '글쓰기', icon: PenTool },
     { href: '/admin', label: '관리자', icon: Settings },
   ];
 

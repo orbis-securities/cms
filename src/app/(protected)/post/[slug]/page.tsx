@@ -12,6 +12,7 @@ import { PollView } from '@/components/editor/views/PollView';
 import ChartView from '@/components/editor/views/ChartView';
 import React from 'react';
 import Button from '@/components/common/Button';
+import 'suneditor/dist/css/suneditor.min.css';
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -446,7 +447,7 @@ export default function PostDetailPage() {
       {!isPreview && (
         <div className="flex items-center justify-end gap-2 mb-4">
           <Button
-            onClick={() => router.push(`/write?id=${postId}`)}
+            onClick={() => router.push(`/write-sun?id=${postId}`)}
             variant="ghost"
             icon={Edit}
             disabled={!canEdit}
@@ -579,7 +580,7 @@ export default function PostDetailPage() {
         <div className="p-6">
           <div
             ref={contentRef}
-            className="prose max-w-none"
+            className="sun-editor-editable prose max-w-none"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
         </div>
@@ -651,6 +652,18 @@ export default function PostDetailPage() {
           </div>
         </div>
       )}
+
+      {/* SunEditor 콘텐츠 스타일 */}
+      <style jsx global>{`
+        .sun-editor-editable img {
+          border: none !important;
+          outline: none !important;
+        }
+
+        .sun-editor-editable [style*="text-align"] {
+          display: block !important;
+        }
+      `}</style>
     </div>
   );
 }

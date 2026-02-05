@@ -79,7 +79,7 @@ export default function TemplateList({
         localStorage.setItem('templateContent', data.result.template.content);
         toast.success(`"${templateTitle}" 템플릿을 불러왔습니다.`);
         // 글쓰기 페이지로 이동
-        router.push('/write');
+        router.push('/write-sun');
       } else {
         toast.error(data.message || '템플릿을 불러오는데 실패했습니다.');
       }
