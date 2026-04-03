@@ -57,6 +57,7 @@ const SunEditorWrapper = forwardRef<SunEditorWrapperRef, SunEditorWrapperProps>(
         formats: ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre'],
         charCounter: false,
         charCounterLabel: '',
+        fontSize: [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72],
         attributesWhitelist: {
           all: 'style',
           img: 'data-featured-image|data-align',
